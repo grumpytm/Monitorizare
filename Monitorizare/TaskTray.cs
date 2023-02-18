@@ -1,15 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows.Forms;
-
-/* 3rd party libs */
-using CronNET;
+using Cron;
 
 namespace Monitorizare
 {
     public class TaskTray : ApplicationContext
     {
-        NotifyIcon notifyIcon = new NotifyIcon();
+        private NotifyIcon notifyIcon = new NotifyIcon();
 
         /* crontab daemon */
         private static readonly CronDaemon cron_daemon = new CronDaemon();
@@ -50,12 +48,12 @@ namespace Monitorizare
             // notifyIcon.Click += new EventHandler(ShowViewData);
 
             /* Setup and start crontab daemon */
-            cron_daemon.AddJob("0 */1 * * *", ContabTask);
+            cron_daemon.Add("0 */1 * * *", ContabTask);
             //cron_daemon.AddJob("* * * * *", ContabTask);
             cron_daemon.Start();
         }
 
-        void Exit(object sender, EventArgs e)
+        private void Exit(object sender, EventArgs e)
         {
             notifyIcon.Visible = false;
             Application.Exit();
@@ -64,7 +62,8 @@ namespace Monitorizare
         public void ContabTask()
         {
             BackgroundWorker bg = new BackgroundWorker();
-            bg.DoWork += (s, e) => {
+            bg.DoWork += (s, e) =>
+            {
                 CronTask.ContabTask();
             };
 
@@ -75,7 +74,7 @@ namespace Monitorizare
             }
         }
 
-        void ShowViewData(object sender, EventArgs e)
+        private void ShowViewData(object sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Vizualizare));
             if (isFormOpen == false)
@@ -87,7 +86,7 @@ namespace Monitorizare
             }
         }
 
-        void ShowExportData(object sender, EventArgs e)
+        private void ShowExportData(object sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Exporta));
             if (isFormOpen == false)
@@ -99,11 +98,11 @@ namespace Monitorizare
             }
         }
 
-        void DownloadNow(object sender, EventArgs e)
+        private void DownloadNow(object sender, EventArgs e)
         {
-
             BackgroundWorker bg = new BackgroundWorker();
-            bg.DoWork += (s, x) => {
+            bg.DoWork += (s, x) =>
+            {
                 CronTask.ContabTask();
             };
 
@@ -114,12 +113,11 @@ namespace Monitorizare
             }
         }
 
-        void ShowSettings(object sender, EventArgs e)
+        private void ShowSettings(object sender, EventArgs e)
         {
-            
         }
 
-        void ShowLogs(object sender, EventArgs e)
+        private void ShowLogs(object sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Logs));
             if (isFormOpen == false)
@@ -132,4 +130,3 @@ namespace Monitorizare
         }
     }
 }
- 
