@@ -4,13 +4,14 @@ using System.Net.NetworkInformation;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.IO;
+using Timer = System.Windows.Forms.Timer;
 
 namespace Monitorizare
 {
-    class Functions
+    internal class Functions
     {
-        static Timer myTimer = new Timer();
-        static readonly Random rand = new Random();
+        private static Timer myTimer = new Timer();
+        private static readonly Random rand = new Random();
 
         // https://stackoverflow.com/a/13740781
         private static void TimedStuff()
@@ -30,6 +31,7 @@ namespace Monitorizare
         }
 
         /* Date to Timestamp */
+
         public static double Date2Timestamp(string date_string, string date_format)
         {
             DateTime date = DateTime.ParseExact(date_string, date_format, null);
@@ -69,7 +71,8 @@ namespace Monitorizare
         {
             try
             {
-                using (TcpClient client = new TcpClient(host, port)) {
+                using (TcpClient client = new TcpClient(host, port))
+                {
                     return true;
                 }
             }
@@ -131,7 +134,8 @@ namespace Monitorizare
         public static void DoTask()
         {
             BackgroundWorker bg = new BackgroundWorker();
-            bg.DoWork += (s, e) => {
+            bg.DoWork += (s, e) =>
+            {
                 // action here
             };
 

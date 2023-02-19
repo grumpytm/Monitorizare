@@ -8,6 +8,7 @@ using System.Threading;
 using System.IO;
 
 /* 3rd party libs */
+
 using MetroFramework.Forms;
 using ComponentFactory.Krypton.Toolkit;
 
@@ -18,7 +19,7 @@ namespace Monitorizare
         public Exporta()
         {
             InitializeComponent();
-            this.Icon = Monitorizare.Properties.Resources.database;
+            this.Icon = Resources.database;
 
             kryptonDataGridView1.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 234, 234, 234);
             kryptonDataGridView2.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 234, 234, 234);
@@ -29,6 +30,7 @@ namespace Monitorizare
 
         /* Form instance */
         public static Exporta _exporta = null;
+
         public static Exporta Instance
         {
             get
@@ -42,6 +44,7 @@ namespace Monitorizare
         }
 
         /* ESC to close */
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == Keys.Escape)
@@ -63,6 +66,7 @@ namespace Monitorizare
         }
 
         /* Clear default row selection */
+
         private void datagridview_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
         {
             ((DataGridView)sender).ClearSelection();
@@ -221,7 +225,6 @@ namespace Monitorizare
                     Excel.WriteSheets(incarcare, descarcare);
 
                     // Console.WriteLine(String.Format("Incarcare: {0} | Descarcare: {1}", incarcare.Rows.Count, descarcare.Rows.Count));
-
                 }
                 else if (time)
                 {

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 /* 3rd party libs */
+
 using MetroFramework.Forms;
 
 namespace Monitorizare
@@ -20,7 +21,7 @@ namespace Monitorizare
             InitializeComponent();
             MySQLite.CheckIntegrity();
 
-            this.Icon = Monitorizare.Properties.Resources.database;
+            this.Icon = Resources.database;
             kryptonDataGridView1.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 234, 234, 234);
 
             // SanityCheck();
@@ -28,6 +29,7 @@ namespace Monitorizare
         }
 
         /* ESC to close */
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == Keys.Escape)
@@ -52,7 +54,7 @@ namespace Monitorizare
             kryptonDataGridView1.Columns["Data"].DefaultCellStyle.Format = "dd.MM.yyyy";
 
             kryptonDataGridView1.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            
+
             // kryptonDataGridView1.RowTemplate.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             kryptonDataGridView1.Columns["#"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
