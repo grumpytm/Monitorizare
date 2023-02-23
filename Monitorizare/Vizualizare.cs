@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Threading;
 
 /* 3rd party libs */
+
 using MetroFramework.Forms;
 using ComponentFactory.Krypton.Toolkit;
 using System.ComponentModel;
@@ -18,7 +19,7 @@ namespace Monitorizare
         public Vizualizare()
         {
             InitializeComponent();
-            this.Icon = Monitorizare.Properties.Resources.database;
+            this.Icon = Resources.database;
 
             CurrentTabPage = 0;
             MySQLite.CheckIntegrity();
@@ -37,6 +38,7 @@ namespace Monitorizare
         }
 
         /* Clear default row selection and highlight rows */
+
         private void GridView_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs args)
         {
             // Console.WriteLine(String.Format("Status: {0}", isFiltered));
@@ -78,6 +80,7 @@ namespace Monitorizare
 
         /* Form instance */
         public static Vizualizare _vizualizare = null;
+
         public static Vizualizare Instance
         {
             get
@@ -91,6 +94,7 @@ namespace Monitorizare
         }
 
         /* ESC to close */
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == Keys.Escape)
@@ -110,7 +114,6 @@ namespace Monitorizare
 
             this.FindForm().Dispose();
         }
-
 
         private void TabControl1_SelectedIndexchanged(object sender, EventArgs e)
         {
@@ -162,7 +165,7 @@ namespace Monitorizare
 
             int count = (CurrentTabPage < 1) ? 5 : 7;
             string table = (CurrentTabPage < 1) ? "incarcare" : "descarcare";
-            
+
             var columnsDict = new Dictionary<int, string> {
                 { 1, "Timestamp" },
                 { 2, "Data" },
@@ -238,7 +241,7 @@ namespace Monitorizare
 
             gridView.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             gridView.Columns["Data"].DefaultCellStyle.Format = "dd.MM.yyyy";
-            
+
             /* Adjust columns size */
             List<int> widths = new List<int>(new int[] { 50, 80, 60, 60, 60, 60, 60 });
 
@@ -353,7 +356,6 @@ namespace Monitorizare
         {
             ShowTab();
         }
-
 
         private void kryptonButton2_Click(object sender, EventArgs e)
         {

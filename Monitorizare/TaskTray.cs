@@ -15,21 +15,21 @@ namespace Monitorizare
 
         public TaskTray()
         {
-            ContextMenu ContextMenu = new ContextMenu();
-            ContextMenu.MenuItems.Add(new MenuItem("Vizualizare", ShowViewData));
-            ContextMenu.MenuItems.Add(new MenuItem("Exportare", ShowExportData));
-            ContextMenu.MenuItems.Add("-");
-            ContextMenu.MenuItems.Add(new MenuItem("Mesaje", ShowLogs));
-            ContextMenu.MenuItems.Add(new MenuItem("Setari", ShowSettings));
-            ContextMenu.MenuItems.Add("-");
-            ContextMenu.MenuItems.Add(new MenuItem("Descarcare", DownloadNow));
-            ContextMenu.MenuItems.Add("-");
-            ContextMenu.MenuItems.Add(new MenuItem("Inchide", Exit));
+            ContextMenuStrip ContextMenu = new ContextMenuStrip();
+            ContextMenu.Items.Add(new ToolStripMenuItem("Vizualizare", null, ShowViewData));
+            ContextMenu.Items.Add(new ToolStripMenuItem("Exportare", null, ShowExportData));
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(new ToolStripMenuItem("Mesaje", null, ShowLogs));
+            ContextMenu.Items.Add(new ToolStripMenuItem("Setari", null, ShowSettings));
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
 
-            notifyIcon.ContextMenu = ContextMenu;
+            notifyIcon.ContextMenuStrip = ContextMenu;
 
             // notifyIcon.ContextMenu.MenuItems[3].Enabled = false; // Logs
-            notifyIcon.ContextMenu.MenuItems[4].Enabled = false; // Setari
+            notifyIcon.ContextMenuStrip.Items[4].Enabled = false; // Setari
 
             /*
             ContextMenuStrip myMenu = new ContextMenuStrip();
@@ -43,7 +43,7 @@ namespace Monitorizare
 
             notifyIcon.Visible = true;
             notifyIcon.Text = "Monitorizare moara";
-            notifyIcon.Icon = Monitorizare.Properties.Resources.database;
+            notifyIcon.Icon = Resources.database;
             notifyIcon.DoubleClick += new EventHandler(ShowViewData);
             // notifyIcon.Click += new EventHandler(ShowViewData);
 
