@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using System.Windows.Forms;
+﻿using System.ComponentModel;
 using Cron;
 
 namespace Monitorizare
@@ -21,8 +19,15 @@ namespace Monitorizare
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Mesaje", null, ShowLogs));
             ContextMenu.Items.Add(new ToolStripMenuItem("Setari", null, ShowSettings));
-            ContextMenu.Items.Add("-");
-            ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
+
+            // disabled
+            // ContextMenu.Items.Add("-");
+            // ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
+
+            // work in progress
+            // ContextMenu.Items.Add("-");
+            // ContextMenu.Items.Add(new ToolStripMenuItem("Format logs", null, FormatLogs));
+
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
 
@@ -42,15 +47,24 @@ namespace Monitorizare
             */
 
             notifyIcon.Visible = true;
-            notifyIcon.Text = "Monitorizare moara";
+            notifyIcon.Text = "Monitorizare incarcare/descarcare moara.";
             notifyIcon.Icon = Resources.database;
             notifyIcon.DoubleClick += new EventHandler(ShowViewData);
             // notifyIcon.Click += new EventHandler(ShowViewData);
 
             /* Setup and start crontab daemon */
-            cron_daemon.Add("0 */1 * * *", ContabTask);
-            //cron_daemon.AddJob("* * * * *", ContabTask);
-            cron_daemon.Start();
+            // cron_daemon.Add("0 */1 * * *", ContabTask);
+            // cron_daemon.Start();
+        }
+
+        private static async void FormatLogs(object sender, EventArgs e)
+        {
+            string[] logFiles = {
+                "Incarcare.log",
+                "Descarcare.log"
+            };
+
+            await CronTasks.ProcessLogFilesAsync(logFiles);
         }
 
         private void Exit(object sender, EventArgs e)
@@ -115,6 +129,7 @@ namespace Monitorizare
 
         private void ShowSettings(object sender, EventArgs e)
         {
+
         }
 
         private void ShowLogs(object sender, EventArgs e)

@@ -1,8 +1,5 @@
-using System;
-using System.Windows.Forms;
 using System.Reflection;
-using System.IO;
-using System.Collections.Generic;
+using System.Runtime.Loader;
 
 namespace Monitorizare
 {
@@ -14,21 +11,18 @@ namespace Monitorizare
         [STAThread]
         static void Main()
         {
-            // AppDomain.CurrentDomain.AppendPrivatePath("lib");
+            var mutexName = "7d4c3b15-cda8-42c6-add8-954acd4e136c"; // Random guid via Guid.NewGuid().ToString();
 
-            using (SingleInstanceMutex sim = new SingleInstanceMutex())
+            using (var mutex = new Mutex(true, mutexName, out bool createdNew))
             {
-                if (sim.IsOtherInstanceRunning)
+                if (!createdNew)
                 {
                     MessageBox.Show("Aplicatia este deja pornita!", "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                // Initialize program here.
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-
-                // Instead of running a form, we run an ApplicationContext.
                 Application.Run(new TaskTray());
             }
         }

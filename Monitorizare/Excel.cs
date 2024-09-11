@@ -1,12 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Data;
-using System.Globalization;
+﻿using System.Data;
 
 /* 3rd party libs */
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
-using System.Linq;
 
 namespace Monitorizare
 {

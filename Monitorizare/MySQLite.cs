@@ -1,14 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Data;
-using System.Linq;
+﻿using System.Data;
 using System.Globalization;
-using System.Collections.Generic;
-using System.Windows.Forms;
 
 /* 3rd party libs */
 using System.Data.SQLite;
-using System.Data.SqlClient;
 
 namespace Monitorizare
 {
@@ -315,19 +309,10 @@ namespace Monitorizare
                         /* insert */
                         foreach (DataRow row in dt.Rows)
                         {
-                            /*
-                                var paramValues = String.Join(",", row.ItemArray.AsEnumerable().Select(x => x.ToString()).ToList()).TrimEnd(',');
-                                command.CommandText = string.Format("INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})", table, columnNames, paramValues);
-                                command.ExecuteNonQuery();
-                            */
-
                             var paramValues = String.Join(",", row.ItemArray.AsEnumerable().Select(x => x.ToString()).ToList()).TrimEnd(',');
 
                             command.CommandText = string.Format("INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})", table, columnNames, paramValues);
                             rowsAffected = command.ExecuteNonQuery();
-
-                            // Console.WriteLine("INSERT OR IGNORE INTO {0} ({1}) VALUES ({2})", table, columnNames, values);
-
                         }
                         transaction.Commit();
 
