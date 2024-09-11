@@ -1,3 +1,27 @@
-Right off the bat I want to state that the The FtpClient.cs and SingleInstanceMutex.cs files aren't my own creation so I'm not taking any credit for them. I may have taken some inspiration of some snipets of code over Internet that I don't recall from where I got them right now, so take this as is.
+# A bit of background
+Sometimes around 2019 a customer asked us (the company I used to work at the time) for help at his pig ranch that was in dire need of some TLC, aka. some major mechanical changes/upgrades to automate things as much as possible in order to increase overall productivity. Taking out (preferably, but not 100% possible) the human factor out of the equation was the cherry on the cake, as at the time his employees used the old school pencil and a piece of paper method to keep track of what happened in the "system", what food was created at the local mill and where said food was later on distributed. This method prooved to be prone to mistakes, hence the upgrades.
 
-Anyway.. this is an old project intended for personal use that I created sometimes back in like 2019 in Visual Studio 2019 Community Edition that I did mostly for my pure enjoyment with it's UI in Romanian language. It's purpose was to 'sit' in system tray with an icon for the user to see and based on a cron schedule (via CronTasks library) or at user's will to download two CVS files (named Descarcare.log and Incarcare.log that can be found in the 'extra' folder) from a PLC (a TM221 series equipment from Schneider Electric if memory serves me right) that's was keeping track of some data from an industrial machine (a mill for a pigs farm with 6 secret mixed recepies that I don't know so don't ask) via FTP (via FtpClient.cs that is NOT my own creation and I'm not taking credit for it, I found it online at the time as an alternative to the 'WebClient' way). The two files are cleaned and turned into proper valid CVS code and then imported into a sqlite3 database only if aren't already in there. The app was intended for a user to either view the imported data in my fancy app (thanks to MetroModernUI library) or export said data based on filters (a period of time for example) the user would apply into an Excel file (via NPOI library directly, this was before switching to Npoi.Mapper as I did in one project or ExcelMapper as I did in later in other personal use small projects) for user to do whatever pleases with that information.
+Anyway, the customer did the mechanical part (rails, silos to deposit the different mixes, scales to weight at input and output, and so on) and we did the automation and logic behind it, aka keeping track of what goes in and out. Thus we used a PLC from Schneider Electric (a TM221 series device, if my memory serves me well) to save data on a SD card in two separate files in a cyclic way (meaning at some point old data would be overwritten), one called called 'Incarcare.log' for loading part and a file called 'Descarcare.log' for taking out part of the system. The PLC has a FTP server where with a known user/password combo (hence why this are still hard coded) one could download and do whatever with those files that are a somewhat CVS format.
+
+**TLDR**: Started working on this app for two reasons:
+- because how was the data saved on the PLC end (cyclic, so records would be overwritten at some point due to space) and because it's in a raw format and would be a hard task for the customer to process the data
+- for my pure enjoyment to learn a new programming language.
+
+I gave the fully working app (the initial .NET Framework version 4 one) to the customer free of charge to help him get the data from the PLC from the past and future records without too much hassle on his part. Last time I talked with them they are still using the app every day.
+
+# About the app
+In initial release I've used Visual Studio 2019 Community Edition to put together a few things to automate the process of taking the raw logs from the PLC via it's FTP server on a cron based task, do some processing and save data in a SQLite database so the customer can read/view data at any time, export data in an Excel spreadsheet and whatnot. The UI is designed with the help of MetroModernUI library, some stuff from Krypton.Components.Suite, the Excel processing part is done via NPOI library, [this](https://github.com/HenriqueCaires/cron) cron library, a FTP client I found online over the Internet and I don't know from where exactly.. anyway, not taking credit for doing all the stuff. :)
+
+## To do:
+- [ ] switch to using the singleton database (created, partially used)
+- [ ] update overall used logic and code
+- [ ] create my own FTP client and drop the one used
+- [ ] switch from NPOI to MiniExcel
+- [ ] miscellaneous bug fixes and improvements
+- [ ] fix visual artefacts that appeared after the change from .NET v4 to v6
+- [ ] maybe switch to WPF and drop WinForms, MetroModernUI and so on
+
+## Done:
+- [x] drop the SingleInstanceMutex.cs altogether in favor of something a lot easier ([link](https://stackoverflow.com/a/819808))
+- [x] switched to records instead of DataTable and major code changes in the logs parsing and saving them to the database
+- [x] some stuff I don't remember right now xD
