@@ -13,57 +13,6 @@ namespace Monitorizare
 
         public static string Database { get => db; set => db = value; }
 
-        public static void CheckIntegrity()
-        {
-            if (!File.Exists(Database) || new FileInfo(Database).Length == 0)
-            {
-                using (SQLiteConnection connection = new SQLiteConnection(String.Format("Data Source={0};Version=3;Compress=True;", Database)))
-                {
-                    connection.Open();
-                    var transaction = connection.BeginTransaction();
-                    try
-                    {
-                        using (SQLiteCommand command = new SQLiteCommand(connection))
-                        {
-                            /* incarcare */
-                            command.CommandText = "CREATE TABLE IF NOT EXISTS `incarcare` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL)";
-                            command.ExecuteNonQuery();
-
-                            /* descarcare */
-                            command.CommandText = "CREATE TABLE IF NOT EXISTS `descarcare`(`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL, `hala` INTEGER NOT NULL, `buncar` INTEGER NOT NULL)";
-                            command.ExecuteNonQuery();
-
-                            /* logs */
-                            command.CommandText = "CREATE TABLE IF NOT EXISTS `logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL, `msg` TEXT NOT NULL)";
-                            command.ExecuteNonQuery();
-                        }
-                    }
-                    catch (SQLiteException e)
-                    {
-                        Console.WriteLine("Exception: {0}\r\n | Stack trace: {1}", e.Message, e.StackTrace);
-                        if (transaction != null)
-                        {
-                            try
-                            {
-                                transaction.Rollback();
-                            }
-                            catch (SQLiteException)
-                            {
-                                Console.WriteLine("Transaction rollback failed.");
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        transaction.Commit();
-                        if (connection.State == ConnectionState.Open)
-                            connection.Close();
-                    }
-
-                    connection.Dispose();
-                }
-            }
-        }
 
         public static List<DateTime> SetMinMaxData(string table)
         {
@@ -451,7 +400,7 @@ namespace Monitorizare
 
         public static void NewLogRecod(long date, string message)
         {
-            CheckIntegrity();
+            // CheckIntegrity();
 
             using (SQLiteConnection connection = new SQLiteConnection(String.Format("Data Source={0};Version=3;Compress=True;", Database)))
             {

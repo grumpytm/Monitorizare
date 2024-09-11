@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Windows.Forms;
-using System.Drawing;
-using System.Threading;
+﻿using System.Data;
 
 /* 3rd party libs */
 
 using MetroFramework.Forms;
 using ComponentFactory.Krypton.Toolkit;
-using System.ComponentModel;
 
 namespace Monitorizare
 {
@@ -22,7 +15,7 @@ namespace Monitorizare
             this.Icon = Resources.database;
 
             CurrentTabPage = 0;
-            MySQLite.CheckIntegrity();
+            // MySQLite.CheckIntegrity();
 
             /* set min & max on first tab */
             SetMinMax("incarcare");

@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
-using Cron;
+﻿using Cron;
+using System.ComponentModel;
+
+using Monitorizare.Database;
 
 namespace Monitorizare
 {
@@ -25,9 +27,13 @@ namespace Monitorizare
             // ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
 
             // work in progress
-            // ContextMenu.Items.Add("-");
-            // ContextMenu.Items.Add(new ToolStripMenuItem("Format logs", null, FormatLogs));
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(new ToolStripMenuItem("Format logs", null, FormatLogs));
 
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(new ToolStripMenuItem("Database stuff", null, DatabaseStuff));
+
+            // end
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
 
@@ -47,7 +53,7 @@ namespace Monitorizare
             */
 
             notifyIcon.Visible = true;
-            notifyIcon.Text = "Monitorizare incarcare/descarcare moara.";
+            notifyIcon.Text = "Monitorizare moara";
             notifyIcon.Icon = Resources.database;
             notifyIcon.DoubleClick += new EventHandler(ShowViewData);
             // notifyIcon.Click += new EventHandler(ShowViewData);
@@ -65,6 +71,12 @@ namespace Monitorizare
             };
 
             await CronTasks.ProcessLogFilesAsync(logFiles);
+        }
+
+        // DatabaseStuff
+        private static async void DatabaseStuff(object sender, EventArgs e)
+        {
+            await DatabaseService.CheckDatabaseIntegrity();
         }
 
         private void Exit(object sender, EventArgs e)

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Data;
+using System.Diagnostics;
+using Monitorizare.Database;
 using Monitorizare.Models;
 
 internal static class DatabaseHelpers
@@ -38,5 +40,20 @@ internal static class DatabaseHelpers
     {
         Debug.Print($"Exception count: {count}");
         throw new NotImplementedException();
+    }
+
+    public static async Task<IEnumerable<string?>> GetMissingTables(List<string> expected)
+    {
+        var instance = SingletonDB.Instance;
+        await using var connection = instance.GetNewConnection();
+        await connection.OpenAsync();
+
+        var tables = connection.GetSchema("Tables")
+            .AsEnumerable()
+            .Select(x => x[2]?.ToString() ?? string.Empty)
+            .ToList();
+
+        connection.Close();
+        return expected.Except(tables);
     }
 }

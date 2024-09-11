@@ -1,9 +1,6 @@
 ﻿using System.Data;
 using System.Diagnostics;
 
-
-/* 3rd party libs */
-
 using Monitorizare.Services;
 
 namespace Monitorizare;
@@ -101,7 +98,7 @@ class CronTasks
 
                 /*
                 // Check database structure and integrity
-                MySQLite.CheckIntegrity();
+                // MySQLite.CheckIntegrity(); // removed
 
                 // Import data table
                 //xx MySQLite.ImportToDatabase("incarcare", Incarcare);

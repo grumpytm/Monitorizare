@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-/* 3rd party libs */
-
+﻿/* 3rd party libs */
 using MetroFramework.Forms;
 
 namespace Monitorizare
@@ -19,7 +8,7 @@ namespace Monitorizare
         public Logs()
         {
             InitializeComponent();
-            MySQLite.CheckIntegrity();
+            // MySQLite.CheckIntegrity();
 
             this.Icon = Resources.database;
             kryptonDataGridView1.RowsDefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 234, 234, 234);

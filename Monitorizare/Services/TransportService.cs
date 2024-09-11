@@ -9,7 +9,6 @@ namespace Monitorizare.Services;
 
 public class TransportService
 {
-
     public static async Task<(int, int)> SaveLogsToDatabaseAsync(string[] logFiles)
     {
         var allRecords = GenerateRecordsFromLogs(logFiles);
@@ -25,6 +24,7 @@ public class TransportService
 
         foreach (var file in files)
         {
+            if (!File.Exists(file)) continue;
             var record = ParseLogFile(file);
             records.AddRange(record);
         }
