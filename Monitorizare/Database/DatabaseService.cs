@@ -1,6 +1,8 @@
 ﻿using System.Data.SQLite;
 using System.Diagnostics;
+
 using Monitorizare.Models;
+using Monitorizare.Services;
 
 namespace Monitorizare.Database;
 
@@ -8,12 +10,7 @@ public class DatabaseService
 {
     public static async Task CheckDatabaseIntegrity()
     {
-        var queries = new Dictionary<string, string>
-        {
-            { "incarcare", "CREATE TABLE `incarcare` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL)" },
-            { "descarcare", "CREATE TABLE `descarcare`(`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL, `hala` INTEGER NOT NULL, `buncar` INTEGER NOT NULL)" },
-            { "logs", "CREATE TABLE `logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL, `msg` TEXT NOT NULL)" }
-        };
+        var queries = SettingsProvider.GetQueries();
 
         var expected = queries.Keys.ToList();
 
@@ -27,17 +24,20 @@ public class DatabaseService
         {
             await connection.OpenAsync();
 
-            using (var transaction = connection.BeginTransaction())
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
-                SQLiteCommand command = connection.CreateCommand();
-
-                foreach (var table in missing)
+                await using (var command = new SQLiteCommand(connection))
                 {
-                    command.CommandText = queries.SingleOrDefault(item => item.Key == table).Value;
-                    await command.ExecuteNonQueryAsync();
+                    foreach (var table in missing)
+                    {
+                        command.CommandText = queries.SingleOrDefault(item => item.Key == table).Value;
+                        await command.ExecuteNonQueryAsync();
+
+                        command.Parameters.Clear();
+                    }
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync();
             }
         }
         catch (Exception ex)
@@ -60,22 +60,23 @@ public class DatabaseService
         {
             await connection.OpenAsync();
 
-            using (var transaction = connection.BeginTransaction())
+            await using (var transaction = await connection.BeginTransactionAsync())
             {
-
-                SQLiteCommand command = new SQLiteCommand(connection);
-
-                foreach (var record in records)
+                await using (var command = new SQLiteCommand(connection))
                 {
-                    var (columns, values, count) = DatabaseHelpers.ExtractColumnsAndValues(record);
-                    var tableName = DatabaseHelpers.GetTableNameByColumnCount(count);
+                    foreach (var record in records)
+                    {
+                        var (columns, values, count) = DatabaseHelpers.ExtractColumnsAndValues(record);
+                        var tableName = DatabaseHelpers.GetTableNameByColumnCount(count);
 
-                    command.CommandText = $"INSERT OR IGNORE INTO {tableName} ({columns}) VALUES ({values})";
-                    affectedRows += await command.ExecuteNonQueryAsync();
-                    command.Parameters.Clear();
+                        command.CommandText = $"INSERT OR IGNORE INTO {tableName} ({columns}) VALUES ({values})";
+                        affectedRows += await command.ExecuteNonQueryAsync();
+
+                        command.Parameters.Clear();
+                    }
                 }
 
-                transaction.Commit();
+                await transaction.CommitAsync();
             }
         }
         catch (Exception ex)

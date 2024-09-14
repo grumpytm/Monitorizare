@@ -1,0 +1,22 @@
+﻿{
+  "Database": {
+    "File": "records.db",
+    "Schema": {
+      "incarcare": "CREATE TABLE `incarcare` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL)",
+      "descarcare": "CREATE TABLE `descarcare` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL UNIQUE, `siloz` INTEGER NOT NULL, `greutate` INTEGER NOT NULL, `hala` INTEGER NOT NULL, `buncar` INTEGER NOT NULL)",
+      "logs": "CREATE TABLE `logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, `data` INTEGER NOT NULL, `msg` TEXT NOT NULL)"
+    }
+  },
+  "Server": {
+    "Host": "192.168.1.11",
+    "User": "USER",
+    "Pass": "USER",
+    "Path": "usr/Log/",
+    "Port": 21,
+    "Timeout": 3000,
+    "Files": [
+      "Incarcare.log",
+      "Descarcare.log"
+    ]
+  }
+}

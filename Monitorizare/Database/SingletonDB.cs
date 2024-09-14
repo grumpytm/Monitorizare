@@ -1,11 +1,10 @@
 ﻿using System.Data.SQLite;
+using Monitorizare.Services;
 
 namespace Monitorizare.Database;
 
-public sealed class SingletonDB
+internal sealed class SingletonDB
 {
-    private string _connectionString = @"Data Source=database.db;Version=3;Compress=True;";
-
     private SingletonDB() { }
 
     private static readonly Lazy<SingletonDB> _lazyInstance = new(() => new());
@@ -13,9 +12,14 @@ public sealed class SingletonDB
     public static SingletonDB Instance =>
         _lazyInstance.Value;
 
-    public SQLiteConnection GetNewConnection()
+    private string _connectionString { get => BuildConnectionString(); }
+
+    string BuildConnectionString()
     {
-        var connection = new SQLiteConnection(_connectionString);
-        return connection;
+        var filePath = SettingsProvider.GetDatabaseFile() ?? "database.db";
+        return $"Data Source={filePath};Version=3;Compress=True;";
     }
+
+    public SQLiteConnection GetNewConnection() =>
+        new SQLiteConnection(_connectionString);
 }

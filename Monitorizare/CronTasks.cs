@@ -40,8 +40,10 @@ class CronTasks
     public string[] Files { get => files; set => files = value; }
 
     /* work in progress */
-    public static async Task ProcessLogFilesAsync(string[] logFiles)
+    public static async Task ProcessLogFilesAsync()
     {
+        var logFiles = SettingsProvider.GetLogFiles();
+
         var result = await TransportService.SaveLogsToDatabaseAsync(logFiles);
 
         var (affectedRows, recordsCount) = result;

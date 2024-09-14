@@ -7,7 +7,9 @@ internal static class DatabaseHelpers
 {
     public static (string, string, int) ExtractColumnsAndValues(Transport record)
     {
-        var properties = record.GetType().GetProperties()
+        var properties = record
+            .GetType()
+            .GetProperties()
             .Where(prop => prop.GetValue(record) != null);
 
         var result = properties
@@ -30,7 +32,7 @@ internal static class DatabaseHelpers
         {
             3 => "incarcare",
             5 => "descarcare",
-            _ => HandleUnexpectedCount(count)
+            _ => HandleUnexpectedCount(count) // UnreachableException() in .NET 7+
         };
 
         return table;
@@ -38,14 +40,13 @@ internal static class DatabaseHelpers
 
     private static string HandleUnexpectedCount(int count)
     {
-        Debug.Print($"Exception count: {count}");
-        throw new NotImplementedException();
+        Debug.Fail($"Unreachable code reached with count {count}");
+        throw new InvalidOperationException();
     }
 
     public static async Task<IEnumerable<string?>> GetMissingTables(List<string> expected)
     {
-        var instance = SingletonDB.Instance;
-        await using var connection = instance.GetNewConnection();
+        await using var connection = SingletonDB.Instance.GetNewConnection();
         await connection.OpenAsync();
 
         var tables = connection.GetSchema("Tables")
@@ -53,7 +54,8 @@ internal static class DatabaseHelpers
             .Select(x => x[2]?.ToString() ?? string.Empty)
             .ToList();
 
-        connection.Close();
+        await connection.CloseAsync();
+
         return expected.Except(tables);
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Cron;
+using Monitorizare.Models;
 using System.ComponentModel;
+using System.Diagnostics;
 
-using Monitorizare.Database;
+using Monitorizare.Services;
 
 namespace Monitorizare
 {
@@ -25,15 +27,7 @@ namespace Monitorizare
             // disabled
             // ContextMenu.Items.Add("-");
             // ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
-
-            // work in progress
-            ContextMenu.Items.Add("-");
-            ContextMenu.Items.Add(new ToolStripMenuItem("Format logs", null, FormatLogs));
-
-            ContextMenu.Items.Add("-");
-            ContextMenu.Items.Add(new ToolStripMenuItem("Database stuff", null, DatabaseStuff));
-
-            // end
+           
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
 
@@ -61,22 +55,6 @@ namespace Monitorizare
             /* Setup and start crontab daemon */
             // cron_daemon.Add("0 */1 * * *", ContabTask);
             // cron_daemon.Start();
-        }
-
-        private static async void FormatLogs(object sender, EventArgs e)
-        {
-            string[] logFiles = {
-                "Incarcare.log",
-                "Descarcare.log"
-            };
-
-            await CronTasks.ProcessLogFilesAsync(logFiles);
-        }
-
-        // DatabaseStuff
-        private static async void DatabaseStuff(object sender, EventArgs e)
-        {
-            await DatabaseService.CheckDatabaseIntegrity();
         }
 
         private void Exit(object sender, EventArgs e)
