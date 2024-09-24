@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Linq;
-using System.Xml;
 
 namespace Monitorizare.Services;
 
 public class SettingsProvider
 {
-    private static IConfiguration GetConfig()
+    private IConfiguration GetConfig()
     {
         return new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -14,24 +12,31 @@ public class SettingsProvider
             .Build();
     }
 
-    public static string? GetDatabaseFile() =>
+    public string? GetDatabaseFile() =>
         GetConfig().GetSection("Database:File").Value;
 
-    public static string? GetValue(string section) =>
+    public string? GetValue(string section) =>
         GetConfig().GetSection(section).Value;
 
-    public static Dictionary<string, string?> GetQueries() =>
+    public Dictionary<string, string?> GetQueries() =>
          GetConfig()
         .GetSection("Database:Schema")
         .GetChildren()
         .Where(x => x.Value != null)
         .ToDictionary(x => x.Key, x => x.Value);
 
-    public static string[] GetLogFiles() =>
+    public string[] GetLogFiles() =>
          GetConfig()
         .GetSection("Server:Files")
         .GetChildren()
         .Where(x => x.Value != null)
         .Select(p => p.Value)
         .ToArray()!;
+
+    public Dictionary<string, string?> GetServerData() =>
+         GetConfig()
+        .GetSection("Server:Details")
+        .GetChildren()
+        .Where(x => x.Value != null)
+        .ToDictionary(x => x.Key, x => x.Value);
 }

@@ -8,12 +8,13 @@
     }
   },
   "Server": {
-    "Host": "192.168.1.11",
-    "User": "USER",
-    "Pass": "USER",
-    "Path": "usr/Log/",
-    "Port": 21,
-    "Timeout": 3000,
+    "Details": {
+      "Host": "192.168.1.11",
+      "User": "USER",
+      "Pass": "USER",
+      "Path": "usr/Log/",
+      "Port": 21
+    },
     "Files": [
       "Incarcare.log",
       "Descarcare.log"

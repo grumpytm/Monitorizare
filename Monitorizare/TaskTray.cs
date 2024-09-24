@@ -1,33 +1,38 @@
 ﻿using Cron;
-using Monitorizare.Models;
 using System.ComponentModel;
-using System.Diagnostics;
-
-using Monitorizare.Services;
 
 namespace Monitorizare
 {
     public class TaskTray : ApplicationContext
     {
+        private CronTasks _cronTasks;
         private NotifyIcon notifyIcon = new NotifyIcon();
-
-        /* crontab daemon */
-        private static readonly CronDaemon cron_daemon = new CronDaemon();
-        private static CronTasks CronTask = new CronTasks();
+        private static readonly CronDaemon cron_daemon = new CronDaemon(); /* crontab daemon */
 
         public TaskTray()
+        {
+            _cronTasks = new CronTasks();
+            BuildContextMenu();
+        }
+
+        public void BuildContextMenu()
         {
             ContextMenuStrip ContextMenu = new ContextMenuStrip();
             ContextMenu.Items.Add(new ToolStripMenuItem("Vizualizare", null, ShowViewData));
             ContextMenu.Items.Add(new ToolStripMenuItem("Exportare", null, ShowExportData));
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Mesaje", null, ShowLogs));
-            ContextMenu.Items.Add(new ToolStripMenuItem("Setari", null, ShowSettings));
+            // ContextMenu.Items.Add(new ToolStripMenuItem("Setari", null, ShowSettings));
+
+            // work in progress
+            ContextMenu.Items.Add("-");
+
+            ContextMenu.Items.Add(new ToolStripMenuItem("Update logs", null, UpdateLogsAsync));
 
             // disabled
             // ContextMenu.Items.Add("-");
             // ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
-           
+
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
 
@@ -57,18 +62,24 @@ namespace Monitorizare
             // cron_daemon.Start();
         }
 
+        public async void UpdateLogsAsync(object sender, EventArgs e)
+        {
+            await _cronTasks.TrySaveTransportLogs();
+        }
+
         private void Exit(object sender, EventArgs e)
         {
             notifyIcon.Visible = false;
             Application.Exit();
         }
 
+        /*
         public void ContabTask()
         {
             BackgroundWorker bg = new BackgroundWorker();
             bg.DoWork += (s, e) =>
             {
-                CronTask.ContabTask();
+                _cronTasks.ContabTask();
             };
 
             bg.RunWorkerAsync();
@@ -77,6 +88,7 @@ namespace Monitorizare
                 Application.DoEvents(); //processes all windows messages currently in the message queue
             }
         }
+        */
 
         private void ShowViewData(object sender, EventArgs e)
         {
@@ -104,22 +116,12 @@ namespace Monitorizare
 
         private void DownloadNow(object sender, EventArgs e)
         {
-            BackgroundWorker bg = new BackgroundWorker();
-            bg.DoWork += (s, x) =>
-            {
-                CronTask.ContabTask();
-            };
-
-            bg.RunWorkerAsync();
-            while (bg.IsBusy)
-            {
-                Application.DoEvents(); //processes all windows messages currently in the message queue
-            }
+            // not implemented yet
         }
 
         private void ShowSettings(object sender, EventArgs e)
         {
-
+            // not implemented yet
         }
 
         private void ShowLogs(object sender, EventArgs e)

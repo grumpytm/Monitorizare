@@ -1,10 +1,15 @@
 ﻿namespace Monitorizare.Models;
 
-public record struct Transport(double Data, int Siloz, int Greutate, int? Hala = null, int? Buncar = null)
-{
-    public static Transport Incarcare(double Data, int Siloz, int Greutate) =>
-        new(Data, Siloz, Greutate);
+public abstract record Transport();
 
-    public static Transport Descarcare(double Data, int Siloz, int Greutate, int Hala, int Buncar) =>
-        new(Data, Siloz, Greutate, Hala, Buncar);
+sealed record Incarcare(double data, int siloz, int greutate) : Transport
+{
+    public static Incarcare Create(double data, int siloz, int greutate) =>
+        new(data, siloz, greutate);
+}
+
+sealed record Descarcare(double data, int siloz, int greutate, int hala, int buncar) : Transport
+{
+    public static Descarcare Create(double data, int siloz, int greutate, int hala, int buncar) =>
+        new(data, siloz, greutate, hala, buncar);
 }

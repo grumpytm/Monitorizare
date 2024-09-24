@@ -1,5 +1,4 @@
-
-using Monitorizare.Services;
+using Monitorizare.Database;
 
 namespace Monitorizare;
 
@@ -11,6 +10,7 @@ class Program
     [STAThread]
     static async Task Main()
     {
+        /* Mutex lock */
         var mutexName = "7d4c3b15-cda8-42c6-add8-954acd4e136c"; // Random guid via Guid.NewGuid().ToString();
 
         using (var mutex = new Mutex(true, mutexName, out bool createdNew))
@@ -21,8 +21,8 @@ class Program
                 return;
             }
 
-            /* Database integrity check */
-            await Database.DatabaseService.CheckDatabaseIntegrity();
+            /* Check database integrity */
+            await new DatabaseService().CheckIntegrity();
             
             /* Start application normally */
             Application.EnableVisualStyles();

@@ -5,21 +5,23 @@ namespace Monitorizare.Database;
 
 internal sealed class SingletonDB
 {
-    private SingletonDB() { }
+    private SettingsProvider _settingsProvider;
+    private string _filePath;
+
+    private SingletonDB()
+    {
+        _settingsProvider = new SettingsProvider();
+        _filePath = _settingsProvider.GetDatabaseFile() ?? "database.db";
+    }
 
     private static readonly Lazy<SingletonDB> _lazyInstance = new(() => new());
 
     public static SingletonDB Instance =>
         _lazyInstance.Value;
 
-    private string _connectionString { get => BuildConnectionString(); }
+    private string _connectionString =>
+        $"Data Source={_filePath};Version=3;Compress=True;";
 
-    string BuildConnectionString()
-    {
-        var filePath = SettingsProvider.GetDatabaseFile() ?? "database.db";
-        return $"Data Source={filePath};Version=3;Compress=True;";
-    }
-
-    public SQLiteConnection GetNewConnection() =>
+    public SQLiteConnection CreateConnection() =>
         new SQLiteConnection(_connectionString);
 }
