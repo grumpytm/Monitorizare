@@ -23,7 +23,7 @@ I gave the fully working app (the initial .NET Framework version 4 one) to the c
 - [ ] fully switch to WPF since MetroFramework and Krypton.Components are no longer maintained and aren't 100% compatible with .NET 6 and they cause some visual artefacts (look at 'Mesaje' form for example). Progress is slow as I have to change some of the controls to suit my particular needs (file 'wpf layout.png' in 'Extra' folder shows what I've done so far).
 - [ ] complete the refactoring the the application where the the UI is mostly involved (considering making a mockup to get this part out of the way)
 - [ ] continue crude experiments with SkiaSharp to get some fancy charts (see 'crude bar chart.png' in Extra for one of them)
-- [ ] fully transition from NPOI to MiniExcel for handling the export of data from database into an Excel fileF
+- [ ] fully transition from NPOI to MiniExcel for handling the export of data from database into an Excel file
 
 ### Done:
 - [x] handling the single-instance application with a simplified and more straightforward solution based on ([this](https://stackoverflow.com/a/819808)) answer on StackOverflow
