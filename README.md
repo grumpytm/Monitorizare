@@ -16,9 +16,6 @@ I gave the fully working app (the initial .NET Framework version 4 one) to the c
 ### Addendum:
 - according to the logs in the PLC the first entry is in fact from 24 September 2018, not 2019 as I initially mentioned.
 
-> [!NOTE]
-> Apart of fixing bugs or adding new functionality to the application, I also try to align with best practices and community standards as I advance my knowledge of the language. With this in mind I would appreciate any sort of feedback related to the coding style or the application itself. :ok_hand:
-
 ### To do:
 - [ ] fully switch to WPF since MetroFramework and Krypton.Components are no longer maintained and aren't 100% compatible with .NET 6 and they cause some visual artefacts (look at 'Mesaje' form for example). Progress is slow as I have to change some of the controls to suit my particular needs (file 'wpf layout.png' in 'Extra' folder shows what I've done so far).
 - [ ] complete the refactoring the the application where the the UI is mostly involved (considering making a mockup to get this part out of the way)
