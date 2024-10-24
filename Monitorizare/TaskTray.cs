@@ -1,76 +1,44 @@
 ﻿using Cron;
-using System.ComponentModel;
+using System.Windows.Forms;
 
 namespace Monitorizare
 {
-    public class TaskTray : ApplicationContext
+    public class TaskTray : IDisposable
     {
         private CronTasks _cronTasks;
-        private NotifyIcon notifyIcon = new NotifyIcon();
-        private static readonly CronDaemon cron_daemon = new CronDaemon(); /* crontab daemon */
+        private NotifyIcon _notifyIcon;
+
+        private static readonly CronDaemon _cronDaemon = new(); /* crontab daemon */
 
         public TaskTray()
         {
             _cronTasks = new CronTasks();
-            BuildContextMenu();
-        }
 
-        public void BuildContextMenu()
-        {
-            ContextMenuStrip ContextMenu = new ContextMenuStrip();
-            ContextMenu.Items.Add(new ToolStripMenuItem("Vizualizare", null, ShowViewData));
-            ContextMenu.Items.Add(new ToolStripMenuItem("Exportare", null, ShowExportData));
-            ContextMenu.Items.Add("-");
-            ContextMenu.Items.Add(new ToolStripMenuItem("Mesaje", null, ShowLogs));
-            // ContextMenu.Items.Add(new ToolStripMenuItem("Setari", null, ShowSettings));
+            _notifyIcon = new NotifyIcon
+            {
+                ContextMenuStrip = new ContextMenuStrip(),
+                Icon = Resources.database,
+                Visible = true,
+            };
 
-            // work in progress
-            ContextMenu.Items.Add("-");
-
-            ContextMenu.Items.Add(new ToolStripMenuItem("Update logs", null, UpdateLogsAsync));
-
-            // disabled
-            // ContextMenu.Items.Add("-");
-            // ContextMenu.Items.Add(new ToolStripMenuItem("Descarcare", null, DownloadNow));
-
-            ContextMenu.Items.Add("-");
-            ContextMenu.Items.Add(new ToolStripMenuItem("Inchide", null, Exit));
-
-            notifyIcon.ContextMenuStrip = ContextMenu;
-
-            // notifyIcon.ContextMenu.MenuItems[3].Enabled = false; // Logs
-            notifyIcon.ContextMenuStrip.Items[4].Enabled = false; // Setari
-
-            /*
-            ContextMenuStrip myMenu = new ContextMenuStrip();
-            var item = new ToolStripMenuItem("test");
-            item.Image = Properties.Resources.book;
-            item.Click += new EventHandler(ShowViewData);
-            myMenu.Items.Add(item);
-            myMenu.Items.Add("-");
-            notifyIcon.ContextMenuStrip = myMenu;
-            */
-
-            notifyIcon.Visible = true;
-            notifyIcon.Text = "Monitorizare moara";
-            notifyIcon.Icon = Resources.database;
-            notifyIcon.DoubleClick += new EventHandler(ShowViewData);
-            // notifyIcon.Click += new EventHandler(ShowViewData);
+            _notifyIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[]
+            {
+                new ToolStripMenuItem("Vizualizare", null, ShowViewData),
+                new ToolStripMenuItem("Exportare", null, ShowExportData),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Mesaje", Resources.sliders.ToBitmap(), ShowLogs),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Update logs", Resources.clock.ToBitmap(), UpdateLogsAsync),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Inchide", Resources.door.ToBitmap(), Exit)
+            });
 
             /* Setup and start crontab daemon */
-            // cron_daemon.Add("0 */1 * * *", ContabTask);
-            // cron_daemon.Start();
-        }
+            // _cronDaemon.Add("0 */1 * * *", ContabTask);
+            // _cronDaemon.Start();
 
-        public async void UpdateLogsAsync(object sender, EventArgs e)
-        {
-            await _cronTasks.TrySaveTransportLogs();
-        }
-
-        private void Exit(object sender, EventArgs e)
-        {
-            notifyIcon.Visible = false;
-            Application.Exit();
+            _notifyIcon.DoubleClick += new EventHandler(ShowViewData);
+            Application.ApplicationExit += OnApplicationExit;
         }
 
         /*
@@ -90,7 +58,7 @@ namespace Monitorizare
         }
         */
 
-        private void ShowViewData(object sender, EventArgs e)
+        private void ShowViewData(object? sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Vizualizare));
             if (isFormOpen == false)
@@ -102,7 +70,7 @@ namespace Monitorizare
             }
         }
 
-        private void ShowExportData(object sender, EventArgs e)
+        private void ShowExportData(object? sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Exporta));
             if (isFormOpen == false)
@@ -114,17 +82,7 @@ namespace Monitorizare
             }
         }
 
-        private void DownloadNow(object sender, EventArgs e)
-        {
-            // not implemented yet
-        }
-
-        private void ShowSettings(object sender, EventArgs e)
-        {
-            // not implemented yet
-        }
-
-        private void ShowLogs(object sender, EventArgs e)
+        private void ShowLogs(object? sender, EventArgs e)
         {
             bool isFormOpen = Functions.IsAlreadyOpen(typeof(Logs));
             if (isFormOpen == false)
@@ -134,6 +92,29 @@ namespace Monitorizare
                 logsForm.BringToFront();
                 logsForm.Activate();
             }
+        }
+
+        public async void UpdateLogsAsync(object? sender, EventArgs e)
+        {
+            await _cronTasks.SaveTransportLogs();
+        }
+
+        private void Exit(object? sender, EventArgs e)
+        {
+            _notifyIcon.Visible = false;
+            _notifyIcon.Dispose();
+            Application.Exit();
+        }
+
+        private void OnApplicationExit(object? sender, EventArgs e)
+        {
+            _notifyIcon.Visible = false;
+            _notifyIcon.Dispose();
+        }
+
+        public void Dispose()
+        {
+            _notifyIcon.Dispose();
         }
     }
 }

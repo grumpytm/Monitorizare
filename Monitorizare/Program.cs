@@ -4,6 +4,8 @@ namespace Monitorizare;
 
 class Program
 {
+    // private static TaskTray _taskTray = new();
+
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
@@ -21,13 +23,18 @@ class Program
                 return;
             }
 
-            /* Check database integrity */
-            await new DatabaseService().CheckIntegrity();
-            
-            /* Start application normally */
+            // Perform a database integrity check
+            await new DatabaseUtils().DatabaseIntegrityCheck();
+
+            // Start application normally
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new TaskTray());
+
+            // Start the task tray application
+            using (TaskTray taskTray = new TaskTray())
+            {
+                Application.Run();
+            }
         }
     }
 }

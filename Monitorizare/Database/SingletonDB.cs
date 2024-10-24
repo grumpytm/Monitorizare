@@ -1,27 +1,30 @@
 ﻿using System.Data.SQLite;
-using Monitorizare.Services;
+using Monitorizare.Settings;
 
 namespace Monitorizare.Database;
 
-internal sealed class SingletonDB
+public sealed class SingletonDB
 {
-    private SettingsProvider _settingsProvider;
-    private string _filePath;
-
-    private SingletonDB()
-    {
-        _settingsProvider = new SettingsProvider();
-        _filePath = _settingsProvider.GetDatabaseFile() ?? "database.db";
-    }
-
-    private static readonly Lazy<SingletonDB> _lazyInstance = new(() => new());
-
-    public static SingletonDB Instance =>
-        _lazyInstance.Value;
+    private readonly string _filePath;
 
     private string _connectionString =>
         $"Data Source={_filePath};Version=3;Compress=True;";
 
+    private static readonly Lazy<SingletonDB> _instance = new(() =>
+        new SingletonDB());
+
+    private readonly Lazy<SettingsFileParser> _settings = new(() =>
+        new SettingsFileParser());
+
+    public static SingletonDB Instance =>
+        _instance.Value;
+
     public SQLiteConnection CreateConnection() =>
         new SQLiteConnection(_connectionString);
+
+    private SingletonDB()
+    {
+        string? file = new SettingsFileParser().GetSettings().File;
+        _filePath = string.IsNullOrWhiteSpace(file) ? "records.db" : file;
+    }
 }

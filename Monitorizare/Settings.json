@@ -1,4 +1,7 @@
 ﻿{
+  "General": {
+    "Crontab": "0 */1 * * *"
+  },
   "Database": {
     "File": "records.db",
     "Schema": {

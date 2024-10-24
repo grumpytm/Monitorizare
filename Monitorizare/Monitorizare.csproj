@@ -11,6 +11,16 @@
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Resources\door.ico" />
+    <None Remove="Resources\sliders.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Models" />
+    <Content Include="Transport" />
+  </ItemGroup>
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>none</DebugType>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
@@ -68,8 +78,7 @@
 		<PackageReference Include="MetroFramework.RunTime">
 			<Version>1.2.0.3</Version>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
 		<PackageReference Include="NPOI">
 			<Version>2.7.1</Version>
 		</PackageReference>
@@ -80,11 +89,18 @@
 			<Version>1.4.2</Version>
 		</PackageReference>
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
-		<PackageReference Include="System.Data.SQLite.Core">
-			<Version>1.0.118</Version>
-		</PackageReference>
+		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
 		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-		<PackageReference Include="System.Text.Json" Version="8.0.4" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="Resources\door.ico">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
+	  <Resource Include="Resources\sliders.ico">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </Resource>
 	</ItemGroup>
 
 	<ItemGroup>

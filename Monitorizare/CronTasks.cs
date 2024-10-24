@@ -1,27 +1,28 @@
-﻿using System.Data;
-using System.Diagnostics;
-
+﻿using System.Diagnostics;
 using Monitorizare.Services;
 
 namespace Monitorizare;
 
 class CronTasks
 {
-    private TransportService _transportService;
+    private readonly Logger _logger;
+
+    private readonly TransportService _transportService;
 
     public CronTasks()
     {
+        _logger = Logger.Instance;
         _transportService = new TransportService();
     }
 
-    public async Task TrySaveTransportLogs()
+    public async Task SaveTransportLogs()
     {
-        var (recordsCount, affectedRows) = await _transportService.ProcessLogs();
+        (int recordsCount, int affectedRows) = await _transportService.ProcessLogs();
 
         string pluralRows = GetPluralOutOf(affectedRows);
         string pluralCount = GetPluralOutOf(recordsCount);
 
-        Debug.WriteLine($"Transport service report: {recordsCount} valid record{pluralRows} found, {affectedRows} record{pluralRows} where added to database.");
+        await _logger.LogAsync($"Transport service report: {recordsCount} valid record{pluralRows} found, {affectedRows} record{pluralRows} where added to database.");
     }
 
     private string GetPluralOutOf(int count) =>

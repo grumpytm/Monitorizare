@@ -398,7 +398,7 @@ namespace Monitorizare
 
         /* Logs */
 
-        public static void NewLogRecod(long date, string message)
+        public static void NewLogRecod(double date, string message)
         {
             // CheckIntegrity();
 

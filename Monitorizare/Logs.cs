@@ -31,7 +31,7 @@ namespace Monitorizare
 
         public static void NewRecord(string message)
         {
-            long date = Functions.UnixTimeNow();
+            double date = Functions.UnixTimeNow();
             //xx MySQLite.NewLogRecod(date, message);
             // Console.WriteLine(String.Format("Now: {0} | message: {1}", date, message));
         }

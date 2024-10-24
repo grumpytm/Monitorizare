@@ -1,24 +1,26 @@
-﻿using Monitorizare.Database;
+﻿using System.Diagnostics;
+using Monitorizare.Database;
 
 namespace Monitorizare.Services;
 
-public class TransportService
+class TransportService
 {
     private DatabaseService _databaseService;
-    private TransportUpdate _transportUpdate;
-
+    
     public TransportService()
     {
         _databaseService = new DatabaseService();
-        _transportUpdate = new TransportUpdate();
     }
 
     public async Task<(int, int)> ProcessLogs()
     {
         /* download */
-        // await _transportUpdate.DownloadAsync();
+        // await DownloadAsync(); // not implemented yet
 
         /* parse & save */
         return await _databaseService.ParseAndSave();
     }
+
+    public void DownloadAsync() =>
+        throw new NotImplementedException();
 }

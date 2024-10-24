@@ -21,10 +21,10 @@ namespace Monitorizare
             myTimer.Start();
         }
 
-        public static long UnixTimeNow()
+        public static double UnixTimeNow()
         {
             var timeSpan = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0));
-            return (long)timeSpan.TotalSeconds;
+            return timeSpan.TotalSeconds;
         }
 
         /* Date to Timestamp */
@@ -32,7 +32,7 @@ namespace Monitorizare
         public static double Date2Timestamp(string date_string, string date_format)
         {
             DateTime date = DateTime.ParseExact(date_string, date_format, null);
-            Double timestamp = Math.Truncate((date.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
+            double timestamp = Math.Truncate(date.ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
             return timestamp;
         }
 
@@ -107,7 +107,7 @@ namespace Monitorizare
         {
             if (File.Exists(file))
             {
-                FileStream stream = null;
+                FileStream? stream = null;
                 try
                 {
                     FileInfo f = new FileInfo(file);

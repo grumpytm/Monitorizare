@@ -79,5 +79,29 @@ namespace Monitorizare {
                 return ((System.Drawing.Icon)(obj));
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        public static System.Drawing.Icon door
+        {
+            get
+            {
+                object obj = ResourceManager.GetObject("door", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        public static System.Drawing.Icon sliders
+        {
+            get
+            {
+                object obj = ResourceManager.GetObject("sliders", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
     }
 }
