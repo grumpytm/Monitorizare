@@ -1,5 +1,5 @@
 # About the app
-Based on a cron schedule (hourly) download two log files that are in CVS format (needs a bit of cleanup) from the FTP server of a PLC (a TM221 series device by Schneider Electric), process (parse, clean and validate) and save content to a SQLite dataabse. User has means to view the logs content within the app or export data to an Excel spreadsheet at any given time.
+Based on a cron schedule (hourly) download two log files that are in CVS format (needs a bit of cleanup) from the FTP server of a PLC (a TM221 series device by Schneider Electric), process (parse, clean and validate) and save content to a SQLite database. User has means to view the logs content within the app or export data to an Excel spreadsheet at any given time.
 
 Initial WinForms version used MetroModernUI and Krypton.Components.Suite libraries for a fancy look, NPOI library for exporting data to Excel spreadsheet part, [this](https://github.com/HenriqueCaires/cron) cron library, a FTP client I found online (sadly don't recall where I found it), an overcomplicated mutex to maintain a single-instance application, among other smaller things I don't remember right now so I'm not taking credit for all the stuff. :grin:
 
