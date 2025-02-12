@@ -1,6 +1,6 @@
 ﻿{
   "General": {
-    "Crontab": "0 */1 * * *"
+    "Schedule": "0 */1 * * *"
   },
   "Database": {
     "File": "records.db",
@@ -12,7 +12,7 @@
   },
   "Server": {
     "Details": {
-      "Host": "192.168.1.11",
+      "Host": "localhost",
       "User": "USER",
       "Pass": "USER",
       "Path": "usr/Log/",

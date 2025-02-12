@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+	<Platforms>AnyCPU;x64</Platforms>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -18,7 +19,6 @@
 
   <ItemGroup>
     <Content Include="Models" />
-    <Content Include="Transport" />
   </ItemGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -62,7 +62,7 @@
 		<PackageReference Include="Cron">
 			<Version>1.0.3</Version>
 		</PackageReference>
-		<PackageReference Include="FluentFTP" Version="51.1.0" />
+		<PackageReference Include="FluentFTP" Version="52.0.0" />
 		<PackageReference Include="Krypton.Components.Suite">
 			<Version>4.5.9</Version>
 		</PackageReference>
@@ -78,9 +78,9 @@
 		<PackageReference Include="MetroFramework.RunTime">
 			<Version>1.2.0.3</Version>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
 		<PackageReference Include="NPOI">
-			<Version>2.7.1</Version>
+			<Version>2.7.2</Version>
 		</PackageReference>
 		<PackageReference Include="Portable.BouncyCastle">
 			<Version>1.9.0</Version>
@@ -88,10 +88,9 @@
 		<PackageReference Include="SharpZipLib">
 			<Version>1.4.2</Version>
 		</PackageReference>
-		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
-		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+		<PackageReference Include="System.Formats.Asn1" Version="9.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

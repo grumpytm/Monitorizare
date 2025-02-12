@@ -1,30 +1,34 @@
-﻿using System.Diagnostics;
+﻿using Monitorizare.Data;
+using Monitorizare.Records;
 using Monitorizare.Services;
+using Monitorizare.Settings;
 
 namespace Monitorizare;
 
 class CronTasks
 {
-    private readonly Logger _logger;
-
-    private readonly TransportService _transportService;
-
-    public CronTasks()
-    {
-        _logger = Logger.Instance;
-        _transportService = new TransportService();
-    }
-
     public async Task SaveTransportLogs()
     {
-        (int recordsCount, int affectedRows) = await _transportService.ProcessLogs();
+        var settings = new AppSettings();
+        var database = new SQLiteDatabase(settings);
+        var logProcessor = new LogProcessor();
 
-        string pluralRows = GetPluralOutOf(affectedRows);
-        string pluralCount = GetPluralOutOf(recordsCount);
+        // Download files
+        // var downloadService = new DownloadService(settings, database);
+        // await downloadService.DownloadFilesAsync();
 
-        await _logger.LogAsync($"Transport service report: {recordsCount} valid record{pluralRows} found, {affectedRows} record{pluralRows} where added to database.");
+        // Parse & save
+        var transportService = new TransportService(settings, database, logProcessor);
+        var (count, affected) = await transportService.ParseAndSave();
+
+        // Log results
+        var (pluralCount, pluralAffected) = (count.Pluralize(), affected.Pluralize());
+        await database.LogMessageAsync($"Transport service report: {count} valid record{pluralCount} found, {affected} record{pluralAffected} were added to the database.");
     }
+}
 
-    private string GetPluralOutOf(int count) =>
+public static class StringExtensions
+{
+    public static string Pluralize(this int count) =>
         count == 1 ? "" : "s";
 }

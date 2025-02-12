@@ -1,26 +1,29 @@
-﻿using System.Diagnostics;
-using Monitorizare.Database;
+﻿
+using Monitorizare.Data;
+using Monitorizare.Records;
+using Monitorizare.Settings;
 
 namespace Monitorizare.Services;
 
 class TransportService
 {
-    private DatabaseService _databaseService;
-    
-    public TransportService()
+    private readonly IAppSettings _settings;
+    private readonly DatabaseService _database;
+
+    private readonly ILogProcessor _logProcessor;
+
+    public TransportService(IAppSettings settings, DatabaseService database, ILogProcessor logProcessor) =>
+        (_settings, _database, _logProcessor) = (settings, database, logProcessor);
+
+    public async Task<(int total, int affected)> ParseAndSave()
     {
-        _databaseService = new DatabaseService();
+        var filesList = _settings.GetFilePaths();
+        var results = await Task.WhenAll(filesList.Select(async filePath =>
+        {
+            var records = await _logProcessor.ProcessLogAsync(filePath!);
+            return await _database.SaveRecordsAsync(records);
+        }));
+
+        return (results.Sum(r => r.Item1), results.Sum(r => r.Item2));
     }
-
-    public async Task<(int, int)> ProcessLogs()
-    {
-        /* download */
-        // await DownloadAsync(); // not implemented yet
-
-        /* parse & save */
-        return await _databaseService.ParseAndSave();
-    }
-
-    public void DownloadAsync() =>
-        throw new NotImplementedException();
 }
