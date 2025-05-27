@@ -1,32 +1,37 @@
 # About the app
-Based on a cron schedule (adjustable via Settings.json file) the app downloads two log files in CVS format from a FTP server that's hosted on a PLC (aka. **P**rogramable **L**ogic **C**ontroller), a TM221 series device by Schneider Electric, then process them (parse, validate and sanitize) and save the collected data into a SQLite database from where the user can review or export data to an Excel spreadsheet at any given time from within the app.
+### Short version
+At a pig ranch installed a PLC (aka. Programable Logic Controller, a TM221 series device from Schneider Electric) to monitor the production and consumption of pigs forage. The app runs in task tray (adds an icon in there with a short menu) on a cron schedule (hourly by default) and downloads two log files from PLC's FTP server that after a bit of processing (parsing, cleaning and validating data) saves their content to a SQLite database from where user has means to view or export the content to an Excel spreadsheet and do whatever they please with it.
 
-Initial WinForms version used MetroModernUI and Krypton.Components.Suite libraries for a fancy look, NPOI library for exporting data to Excel spreadsheet part, [this](https://github.com/HenriqueCaires/cron) cron library, a FTP client I found online (sadly don't recall where I found it), an overcomplicated mutex to maintain a single-instance application, among other smaller things I don't remember right now so I'm not taking credit for all the stuff. :grin:
+The initial WinForms version (as in .NET 4.6.1 and then NET 6) I used [MetroModernUI](https://github.com/dennismagno/metroframework-modern-ui) and [Krypton.Components](https://github.com/ComponentFactory/Krypton) libraries to give it a 'fancy look', [NPOI](https://github.com/nissl-lab/npoi/) library for exporting data to Excel spreadsheet, [this](https://github.com/HenriqueCaires/cron) cron library, a FTP client I found online (sadly don't recall where I found it) and an overcomplicated Mutex to maintain a single-instance application among other smaller things I don't remember right now. Bottom line is that I'm not taking credit for everything the app comes bundled with.
 
-### A bit of background
-Sometimes around 2018 a customer asked us (the company I was working at the time) for help at his pig ranch that was in dire need of some TLC, aka. some major mechanical changes/upgrades to automate things as much as possible in order to increase overall productivity. Taking out (preferably, but not 100% possible) the human factor from the equation was the cherry on the cake, as at the time his employees used the old school "pencil and a piece of paper" method to keep track of things within the "system". Obviously this method prooved to be prone to errors multiple times, hence the upgrades. Semi-automating the process, and I say semi cos someone still had to push some buttons on both ends, helped the customer to gain a more reliable source of information about the type (based on what silo was being filled) and amount (there are weights on both ends) of forage that was created at the local mill and then to where (building and section) said forage was later on distributed to.
+### Longer version
+Sometimes around 2018 a customer asked us (the company I was working at the time) to help them to automate things as much as possible in order to increase overall productivity at a pig ranch that was in dire need of major mechanical changes and upgrades. The main goal was to limit the human interaction as much as possible and to gain a more reliable source of information about the forage mixes (based on silo it was deposited after it was weighted) that was being created at the local mill and then to where said forage was distributed to ( meaning building and section of that building). Up until the automation upgrade the customer had to rely on employees who used the old school 'pencil and a piece of paper' method to keep track of what happened within the system, obviously this method prooved to be prone to human errors.
 
-Anyway, the customer took care of the mechanical part (rails, silos to deposit the different mixes, scales to weight when flling and emptying, and so on) and we did the automation and logic behind it, aka. keeping track of what goes in and out. The PLC saves data on a SD card in two separate files (one called called 'Incarcare.log' for filling the silos and a file called 'Descarcare.log' when extracting forage from the silos) in a cyclic format (meaning at some point old data would be overwritten and thus potential data could be lost). The PLC has a FTP server where with a known user/password combo (hence why this are still hard coded) one can download and do whatever with those files, after a bit of sanitization.
+The PLC saves loading data (file called 'Incarcare.log') and unloading data (file called 'Descarcare.log') onto an internal SD card, information that can be accessed via it's FTP server with a known user/password combination. Given the way data is saved, meaning in a cyclic pattern resulting in a potential data loss since old data will be overwritten at some point in time, someone would have had to make a copy of the records so information isn't lost. Apart the download itself that someone also had to do some cleanup of the files (remove headers, remove the extra spaces that needs to be cleaned and whatnot) and remove the duplicated logs and whatnot, hence the app.
 
 ### **TLDR**:
-Started working on this app for two reasons:
-- because how was the data saved on the PLC end (cyclic, so records would be overwritten at some point due to space) and because it's in a raw format and would be a hard task for the customer to process the data
-- for my pure enjoyment to learn a new programming language.
+Started working on this app for two main reasons:
+- collected data is saved in a cyclic manner (meaning oldest items are overwritten when new data comes in - aka. FILO) on the SD card located inside the the PLC, thus if the logs aren't saved on a freqvent basis then there's a potential data loss. On top of this, since the logs are in a raw format this would mean the customer would also have had the resposability of processing and filtering the logs in order to only save the new ones. Bottom line is this would have been a PITA for the customer.
+- and most important for my pure enjoyment to learn a new programming language.
 
-I gave the fully working app (the initial .NET 4.6.1 version) to the customer free of charge to help him get the data from the PLC from the past and future records without too much hassle on his part. Last time I talked with them the app is used on a daily basis.
+I gave the customer a free of charge fully working 4.6.1 version of the app to help them automate the entire process of downloading, processing and saving data for future access to the older records without needing any effort on their part. Last time I talked with one of their empoloyees he said that they are still using the app.
 
 ### To do:
-- [ ] transition to WPF since MetroFramework and Krypton.Components are no longer maintained (they are somewhat still working with .NET 6 but cause some visual artefacts). Progress is slow as I have to change some of the controls to suit my particular needs (look at [this](https://github.com/grumpytm/Monitorizare/blob/master/extra/wpf%20layout.png) for current progress).
-- [ ] continue crude experiments with SkiaSharp to get some fancy charts (see 'crude bar chart.png' in Extra for one of them)
-- [ ] fully transition from NPOI to MiniExcel for handling the export of data from database into an Excel file
+- [ ] upgrade to last available .NET version and switch to WPF (or maybe something else?) since MetroFramework and Krypton.Components are sadly no longer maintained. Progress on switching to WPF is slow, cos I have to adapt some of the controls to suit my needs or invent some to cover the WinForm's shortcoming in controls.
+- [ ] figure out the shape and form of the charts I want to add to the app via [SkiaSharp](https://github.com/mono/SkiaSharp) library. I fiddled a bit with it [here](https://github.com/grumpytm/SkiaChart), nothing fancy.
+- [ ] improove the filtering `DataGridView` content mechanism, right now I'm relying on three `ComboBox` and two `KryptonDateTimePicker` for filtering and loading data.
 
 ### Done:
-- [x] handling the single-instance application with a simplified and more straightforward solution based on ([this](https://stackoverflow.com/a/819808)) answer on StackOverflow
-- [x] transitioned to records from using DataTable, mostly impacting the functionality of the log parsing and saving in the database
-- [x] externalized some of the previously hard-coded settings into a JSON file to be more flexible to changes via custom service (for example if the customer wishes to change the the PLC's IP address)
-- [x] refactored the code in multiple sections of the application, most notable ones are in the 'transport' logs processing (parsing, filtering, and saving to the database)
-- [x] restructured the project into separate folders to improve it's maintainability and readability
+- [x] handling the single-instance application with a simplified and more straightforward solution based on [this](https://stackoverflow.com/a/819808) answer on StackOverflow
+- [x] transitioned to records from DataTable to handle collections within the appplication
+- [x] externalized most of the previously hard-coded settings into a JSON file in case the customer wishes to change the the PLC's IP address due to changes in it's internal network or whatnot
+- [x] refactored the code in multiple sections of the application, most notable ones are in the logs processing (parsing, filtering, and saving data to the database)
+- [x] restructured the project into separate folders to improve (to some extent) it's maintainability and readability
 - [x] added a simple logging functionality to make debugging easier (to some extent at least)
-- [x] implemented a thread-safe singleton pattern for managing database connections (SQLite is used, but can be easily changed)
-- [x] use FluentFTP for handling the downloads of the log files from the PLC (functionality disabled while developing this)
-- [x] refactored code behind the 'Mesaje' and 'Vizualizare' pages and fixed the visual artefacts
+- [x] implemented a thread-safe singleton pattern for managing database connections
+- [x] useing [FluentFTP](https://github.com/robinrodricks/FluentFTP) for handling the downloads of the log files from the PLC
+- [x] in order to reduce the memory usage I've switched to `StreamReader.ReadLineAsync` and `record struct` (in place where it was possible)
+- [x] refactored the code behind the UI forms (view data, export and read logged messages) and once again everything is functional
+- [x] all used `DataGridView` have column sorting and filtering (where needed), highlighting rows that aren't within bounds
+- [x] switched from [NPOI](https://github.com/nissl-lab/npoi/) to [MiniExcel](https://github.com/mini-software/MiniExcel) for exporting data from database into an Excel file
+- [x] replaced integrity check with a migration mechanism to be allow me to perform updates the database structure on the fly via simple SQL statements stored in a .sql file
