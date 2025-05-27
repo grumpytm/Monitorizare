@@ -63,7 +63,7 @@ namespace Monitorizare {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        public static System.Drawing.Icon clock {
+        public static System.Drawing.Icon Clock {
             get {
                 object obj = ResourceManager.GetObject("clock", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
@@ -73,32 +73,28 @@ namespace Monitorizare {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        public static System.Drawing.Icon database {
+        public static System.Drawing.Icon Database {
             get {
                 object obj = ResourceManager.GetObject("database", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        public static System.Drawing.Icon door
-        {
-            get
-            {
+        public static System.Drawing.Icon Door {
+            get {
                 object obj = ResourceManager.GetObject("door", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        public static System.Drawing.Icon sliders
-        {
-            get
-            {
+        public static System.Drawing.Icon Sliders {
+            get {
                 object obj = ResourceManager.GetObject("sliders", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }

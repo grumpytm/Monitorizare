@@ -1,13 +1,11 @@
 ﻿using Cron;
-using Monitorizare.Records;
-using Monitorizare.Settings;
 
 namespace Monitorizare;
 
-public class TaskTray : IDisposable
+public class TaskTray : ApplicationContext
 {
     private CronTasks _cronTasks;
-    private NotifyIcon _notifyIcon;
+    private readonly NotifyIcon _notifyIcon;
     private readonly CronDaemon _cronDaemon;
     private readonly IAppSettings _settings;
 
@@ -17,89 +15,77 @@ public class TaskTray : IDisposable
         _cronDaemon = new CronDaemon();
         _settings = new AppSettings();
 
+        // Notification icon setup
         _notifyIcon = new NotifyIcon
         {
-            ContextMenuStrip = new ContextMenuStrip(),
-            Icon = Resources.database,
+            ContextMenuStrip = CreateContextMenu(),
+            Icon = Resources.Database,
             Visible = true,
         };
 
-        // Context menu
-        _notifyIcon.ContextMenuStrip.Items.AddRange(new ToolStripItem[]
-        {
-             new ToolStripMenuItem("Vizualizare", null, ShowViewData),
-            new ToolStripMenuItem("Exportare", null, ShowExportData),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("Mesaje", null, ShowLogs),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("Update logs", null, UpdateLogsAsync),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("Inchide", Resources.door.ToBitmap(), Exit)
-        });
+        _notifyIcon.DoubleClick += (s, e) => ShowForm<Vizualizare>();
 
-        _notifyIcon.DoubleClick += new EventHandler(ShowViewData);
+        // Database migrations aka. integrity check manage future changes to the database schema
+        _ = DatabaseFactory.GetDatabase().ApplyMigrationsAsync();
 
         // Setup and start Crontab daemon
-        _cronDaemon.Add(GetSchedule(), async () => await _cronTasks.SaveTransportLogs());
+        var schedule = GetSchedule();
+        _cronDaemon.Add(schedule, async () => await _cronTasks.SaveTransportLogs());
         _cronDaemon.Start();
-
-        Application.ApplicationExit += OnApplicationExit;
     }
+
+    private ContextMenuStrip CreateContextMenu()
+    {
+        var menu = new ContextMenuStrip();
+        menu.Items.AddRange(MenuItems);
+        return menu;
+    }
+
+    private ToolStripItem[] MenuItems => new ToolStripItem[]
+    {
+        new ToolStripMenuItem("Vizualizare", null, (s, e) => ShowForm<Vizualizare>()),
+        new ToolStripMenuItem("Exportare", null, (s, e) => ShowForm<Exporta>()),
+        new ToolStripSeparator(),
+        new ToolStripMenuItem("Mesaje", null, (s, e) => ShowForm<Logs>()),
+        new ToolStripSeparator(),
+# if DEBUG
+        new ToolStripMenuItem("Update logs", null, UpdateLogsAsync),
+        new ToolStripSeparator(),
+# endif
+        new ToolStripMenuItem("Inchide", Resources.Door.ToBitmap(), (s, e) => ExitThread())
+    };
 
     private string GetSchedule() =>
-        _settings.Configuration.GetSection("General:Schedule").Value ?? "0 */1 * * *";
+        _settings.Configuration.GetSection("General:Schedule").Value ?? "0 */1 * * *"; // Run once every hour by default
 
-    private void ShowViewData(object? sender, EventArgs e)
+    protected override void Dispose(bool disposing)
     {
-        ShowForm<Vizualizare>();
-    }
-
-    private void ShowExportData(object? sender, EventArgs e)
-    {
-        ShowForm<Exporta>();
-    }
-
-    private void ShowLogs(object? sender, EventArgs e)
-    {
-        ShowForm<Logs>();
-    }
-
-    public async void UpdateLogsAsync(object? sender, EventArgs e)
-    {
-        await _cronTasks.SaveTransportLogs();
-    }
-
-    private void Exit(object? sender, EventArgs e)
-    {
-        _notifyIcon.Visible = false;
-        _notifyIcon.Dispose();
-        Application.Exit();
-    }
-
-    private void OnApplicationExit(object? sender, EventArgs e)
-    {
-        _notifyIcon.Visible = false;
-        _notifyIcon.Dispose();
-    }
-
-    public void Dispose()
-    {
-        _notifyIcon.Dispose();
+        if (disposing) _notifyIcon.Dispose();
+        base.Dispose(disposing);
     }
 
     // Generic function to create a new form or bring it to front
-    private void ShowForm<T>() where T : Form, new()
+    private static void ShowForm<T>() where T : Form, new()
     {
         var existingForm = Application.OpenForms[typeof(T).Name];
-        if (existingForm == null)
+        if (existingForm is null)
         {
-            var form = new T();
+            var form = new T
+            {
+                Icon = Resources.Database
+            };
             form.Show();
             form.Activate();
         }
         else
         {
+            existingForm.Activate();
             existingForm.BringToFront();
         }
     }
+
+# if DEBUG // Debugging purposes only
+    public async void UpdateLogsAsync(object? sender, EventArgs e) =>
+        await _cronTasks.SaveTransportLogs();
+# endif
 }

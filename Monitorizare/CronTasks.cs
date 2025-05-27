@@ -1,34 +1,21 @@
-﻿using Monitorizare.Data;
-using Monitorizare.Records;
-using Monitorizare.Services;
-using Monitorizare.Settings;
+﻿namespace Monitorizare;
 
-namespace Monitorizare;
-
-class CronTasks
+public class CronTasks
 {
+
+    private readonly ILogger _logger = new Logger();
+
     public async Task SaveTransportLogs()
     {
         var settings = new AppSettings();
-        var database = new SQLiteDatabase(settings);
-        var logProcessor = new LogProcessor();
+        var logProcessor = new LogProcessor(settings);
 
         // Download files
-        // var downloadService = new DownloadService(settings, database);
-        // await downloadService.DownloadFilesAsync();
+        var downloadService = new DownloadService(settings);
+        await downloadService.DownloadFilesAsync();
 
-        // Parse & save
-        var transportService = new TransportService(settings, database, logProcessor);
-        var (count, affected) = await transportService.ParseAndSave();
-
-        // Log results
-        var (pluralCount, pluralAffected) = (count.Pluralize(), affected.Pluralize());
-        await database.LogMessageAsync($"Transport service report: {count} valid record{pluralCount} found, {affected} record{pluralAffected} were added to the database.");
+        // Process and save logs to database
+        var transportService = new TransportService(settings, logProcessor);
+        await transportService.ProcessAndSaveLogsAsync();
     }
-}
-
-public static class StringExtensions
-{
-    public static string Pluralize(this int count) =>
-        count == 1 ? "" : "s";
 }

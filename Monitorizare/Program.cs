@@ -1,6 +1,3 @@
-using Monitorizare.Data;
-using Monitorizare.Settings;
-
 namespace Monitorizare;
 
 class Program
@@ -9,7 +6,7 @@ class Program
     /// The main entry point for the application.
     /// </summary>
     [STAThread]
-    static async Task Main()
+    static void Main()
     {
         // Mutex lock
         var mutexName = "7d4c3b15-cda8-42c6-add8-954acd4e136c"; // Random GUID generated with Guid.NewGuid().ToString();
@@ -21,16 +18,12 @@ class Program
             return;
         }
 
-        // Perform a database integrity check
-        var database = new SQLiteDatabase(new AppSettings());
-        await database.IntegrityCheckAsync();
-
         // Start application normally
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
         // Start the task tray application
-        using TaskTray taskTray = new TaskTray();
-        Application.Run();
+        using var taskTray = new TaskTray();
+        Application.Run(taskTray);
     }
 }
