@@ -25,7 +25,7 @@ public class TaskTray : ApplicationContext
 
         _notifyIcon.DoubleClick += (s, e) => ShowForm<Vizualizare>();
 
-        // Database migrations aka. integrity check manage future changes to the database schema
+        // Database migrations aka. integrity check and manage future changes done to the database schema
         _ = DatabaseFactory.GetDatabase().ApplyMigrationsAsync();
 
         // Setup and start Crontab daemon
@@ -70,10 +70,7 @@ public class TaskTray : ApplicationContext
         var existingForm = Application.OpenForms[typeof(T).Name];
         if (existingForm is null)
         {
-            var form = new T
-            {
-                Icon = Resources.Database
-            };
+            var form = new T { Icon = Resources.Database };
             form.Show();
             form.Activate();
         }

@@ -6,7 +6,7 @@ namespace Monitorizare;
 
 public partial class Vizualizare : MetroForm
 {
-    private IEnumerable<TransportContentDTO> _content;
+    private IEnumerable<TransportContentDTO> _content = Enumerable.Empty<TransportContentDTO>();
     private UITabNames CurrentTab { get; set; }
     private string CurrentTabName => CurrentTab.ToString().ToLower();
     private bool IsIncarcareTab => CurrentTab == UITabNames.Incarcare;
@@ -19,11 +19,8 @@ public partial class Vizualizare : MetroForm
         InitializeComponent();
 
         CurrentTab = 0;
-        _content = Enumerable.Empty<TransportContentDTO>();
-
         _ = LoadLastDataAsync();
         _ = SetDateTimeBounds();
-
         DataGridView.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
         DataGridView.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
         FormClosing += (sender, args) => Vizualizare_FormClosing(sender, args);

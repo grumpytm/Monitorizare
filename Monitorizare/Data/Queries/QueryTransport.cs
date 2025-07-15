@@ -50,7 +50,6 @@ public class QueryTransport : QueryDatabase
     public IAsyncEnumerable<IDictionary<string, object>> ExportDescarcareBetween(long min, long max) => ExportTableAsync("descarcare", min, max, reader =>
     {
         var (date, time) = reader["data"].ConvertTo<long>().ExtractDateAndTime();
-
         return new Dictionary<string, object>
         {
             ["Data"] = date.ToString("dd.MM.yyyy"),
@@ -108,21 +107,6 @@ public class QueryTransport : QueryDatabase
         return new DescarcareDTO(date, time, siloz, greutate, hala, buncar);
     }
 
-    private async IAsyncEnumerable<IDictionary<string, object>> ExportTableAsync(string table, long min, long max, Func<DbDataReader, IDictionary<string, object>> mapRow)
-    {
-        await using var connection = CreateConnection();
-        await connection.OpenAsync();
-
-        using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT * FROM {table} WHERE {"data".ToStrftime()} BETWEEN {min.ToStrftime()} AND {max.ToStrftime()} ORDER BY data ASC";
-
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            yield return mapRow(reader);
-        }
-    }
-
     public async Task<IEnumerable<LastDatesDTO>> GetMaxDatesFor(string table)
     {
         var query = $"SELECT MAX(data) AS Last FROM {table}";
@@ -139,6 +123,19 @@ public class QueryTransport : QueryDatabase
     {
         var query = $"SELECT MIN(data) AS Min, MAX(data) AS Max, 'Incarcare' AS Type FROM incarcare UNION ALL  SELECT MIN(data) AS Min, MAX(data) AS Max, 'Descarcare' AS Type FROM descarcare";
         return await FetchAndMapAsync(query, ProcessBounds);
+    }
+
+    private async IAsyncEnumerable<IDictionary<string, object>> ExportTableAsync(string table, long min, long max, Func<DbDataReader, IDictionary<string, object>> mapRow)
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsyncConnection();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT * FROM {table} WHERE {"data".ToStrftime()} BETWEEN {min.ToStrftime()} AND {max.ToStrftime()} ORDER BY data ASC";
+
+        using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            yield return mapRow(reader);
     }
 
     private static LastDatesDTO ProcessLastRange(DbDataReader reader)

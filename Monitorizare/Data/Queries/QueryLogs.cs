@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Globalization;
 
 namespace Monitorizare.Data.Queries;
 

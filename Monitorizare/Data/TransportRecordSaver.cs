@@ -5,8 +5,11 @@ namespace Monitorizare.Data;
 public class TransportRecordSaver
 {
     private readonly ILogger _logger;
-    private static DbConnection CreateConnection() => SingletonDB.Instance.CreateConnection();
-    public TransportRecordSaver() => _logger = LoggerFactory.CreateLogger();
+    private static DbConnection CreateConnection() =>
+        SingletonDB.Instance.CreateConnection();
+
+    public TransportRecordSaver() =>
+        _logger = LoggerFactory.CreateLogger();
 
     public async Task<int> SaveRecordsAsync(IEnumerable<ITransport> records)
     {
@@ -14,7 +17,8 @@ public class TransportRecordSaver
 
         int affectedRows = 0;
         await using var connection = CreateConnection();
-        await connection.OpenAsync();
+        await connection.OpenAsyncConnection();
+
         using var transaction = await connection.BeginTransactionAsync();
         using var command = connection.CreateCommand();
         command.Transaction = transaction;

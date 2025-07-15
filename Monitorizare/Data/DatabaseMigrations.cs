@@ -15,15 +15,18 @@ public class DatabaseMigrations
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+# if DEBUG // Debugging purposes only
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
             Console.WriteLine($"{DateTime.UtcNow} [Unhandled exception] - {args.ExceptionObject}");
         };
+#endif
     }
 
     public async Task ApplyMigrationsAsync()
     {
         await using var connection = CreateConnection();
+        await connection.OpenAsyncConnection();
 
         ExistingTables = await connection.GetExistingTablesAsync();
         var lastMigration = string.Empty;
@@ -51,7 +54,8 @@ public class DatabaseMigrations
         try
         {
             await using var connection = CreateConnection();
-            await connection.OpenAsync();
+            await connection.OpenAsyncConnection();
+
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT MAX(file) FROM migrations";
             var result = await command.ExecuteScalarAsync();
@@ -93,8 +97,7 @@ public class DatabaseMigrations
                 .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("--"));
 
             await using var connection = CreateConnection();
-            if (connection.State != ConnectionState.Open)
-                await connection.OpenAsync();
+            await connection.OpenAsyncConnection();
 
             using var transaction = await connection.BeginTransactionAsync();
             using var command = connection.CreateCommand();
@@ -134,8 +137,7 @@ public class DatabaseMigrations
         if (!migrations.Any()) return;
 
         await using var connection = CreateConnection();
-        if (connection.State != ConnectionState.Open)
-            await connection.OpenAsync();
+        await connection.OpenAsyncConnection();
 
         using var command = connection.CreateCommand();
         using var transaction = await connection.BeginTransactionAsync();

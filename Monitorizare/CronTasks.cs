@@ -2,9 +2,6 @@
 
 public class CronTasks
 {
-
-    private readonly ILogger _logger = new Logger();
-
     public async Task SaveTransportLogs()
     {
         var settings = new AppSettings();

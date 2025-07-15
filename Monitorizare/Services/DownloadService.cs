@@ -22,8 +22,10 @@ class DownloadService
 
     public async Task DownloadFilesAsync()
     {
-        var filesList = await GetFileList();
-        if (!filesList.Any()) return;
+        var filesList = _settings.GetFileList();
+        
+        if (!filesList.Any())
+            await _logger.LogErrorAsync("Error, corrupted or missing file list in configuration file, nothing to download.");
 
         var settings = new FTPServerSettings(_settings);
         var localPath = Directory.GetCurrentDirectory().CombineLocalPath(settings.LocalPath);
@@ -50,19 +52,6 @@ class DownloadService
         {
             await _logger.LogExceptionAsync(ex);
         }
-    }
-
-    private async Task<IEnumerable<string>> GetFileList()
-    {
-        var fileList = _settings.GetFileList();
-
-        if (fileList == null || !fileList.Any())
-        {
-            await _logger.LogErrorAsync("Error, corrupted or missing file list in configuration file, nothing to download.");
-            return Enumerable.Empty<string>();
-        }
-
-        return fileList.Cast<string>();
     }
 
     private async Task LogStatus(string file, FtpStatus status)

@@ -79,8 +79,8 @@
     <PackageReference Include="MetroFramework.Fonts" Version="1.2.0.3" />
     <PackageReference Include="MetroFramework.RunTime" Version="1.2.0.3" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.5" />
-    <PackageReference Include="MiniExcel" Version="1.41.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
+    <PackageReference Include="MiniExcel" Version="1.41.3" />
     <PackageReference Include="FluentFTP" Version="52.1.0" />
   </ItemGroup>
 

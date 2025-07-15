@@ -1,4 +1,3 @@
-using System.Data;
 using System.Data.Common;
 
 namespace Monitorizare.Data.Queries;
@@ -12,15 +11,15 @@ public abstract class QueryDatabase
     {
         var resultList = new List<T>();
         await using var connection = CreateConnection();
-        if (connection.State != ConnectionState.Open)
-            await connection.OpenAsync();
+        await connection.OpenAsyncConnection();
 
         try
         {
             using var command = connection.CreateCommand();
             command.CommandText = query;
             using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync()) resultList.Add(map(reader));
+            while (await reader.ReadAsync())
+                resultList.Add(map(reader));
         }
         catch (Exception ex)
         {

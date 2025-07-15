@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Monitorizare.Common;
 
 namespace Monitorizare.Settings;
 
