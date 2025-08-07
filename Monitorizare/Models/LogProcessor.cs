@@ -11,19 +11,44 @@ public class LogProcessor : ILogProcessor
         _logger = LoggerFactory.CreateLogger();
     }
 
-    public async Task<IEnumerable<ITransport>> TryParseFileAsync(string filePath)
+    public async Task<IEnumerable<TransportLog>> TryParseLoadingAsync(string filePath)
     {
-        var records = new List<ITransport>();
-        using StreamReader reader = File.OpenText(filePath);
-        await reader.ReadLineAsync(); // skip header
+        return await TryParseLogAsync(filePath, line =>
+        {
+            var parts = line.ProcessTimestamp();
+            return new Incarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>());
+        });
+    }
+
+    public async Task<IEnumerable<TransportLog>> TryParseUnloadingAsync(string filePath)
+    {
+        return await TryParseLogAsync(filePath, line =>
+        {
+            var parts = line.ProcessTimestamp();
+            return new Descarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>(), parts[3].ConvertTo<int>(), parts[4].ConvertTo<int>());
+        });
+    }
+
+    private async Task<IEnumerable<TransportLog>> TryParseLogAsync(string filePath, Func<string, TransportLog> parser)
+    {
+        var records = new List<TransportLog>();
 
         try
         {
+            using StreamReader reader = File.OpenText(filePath);
+            await reader.ReadLineAsync(); // skip header
+
             while (await reader.ReadLineAsync() is { } line)
             {
                 var sanitizedLine = line.Sanitize();
                 if (sanitizedLine.PassesValidation())
-                    records.AddRange(sanitizedLine.ProcessTimestamp().ToTransportType(filePath));
+                {
+                    records.Add(parser(sanitizedLine));
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"Error, while parsing {Path.GetFileName(filePath)} file, the `{sanitizedLine}` line didn't pass the validation and thus was ignored.");
+                }
             }
         }
         catch (Exception ex)

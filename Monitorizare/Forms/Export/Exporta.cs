@@ -18,6 +18,13 @@ namespace Monitorizare
 
             _logger = LoggerFactory.CreateLogger();
             _database = DatabaseFactory.GetDatabase();
+            Shown += (sender, args) => Exporta_FormShown(sender, args);
+        }
+
+        private void Exporta_FormShown(object? sender, EventArgs e)
+        {
+            _ = SetDateTimeLimits();
+            _ = LoadDataAsync();
 
             PopulateExporType();
             ComboBoxExportType.SelectedIndexChanged += ComboBox_SelectedIndexChanged;
@@ -26,16 +33,6 @@ namespace Monitorizare
 
             DataGridViewIncarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
             DataGridViewDescarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
-
-            _ = SetDateTimeLimits();
-            _ = LoadDataAsync();
-
-#if DEBUG
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            {
-                Console.WriteLine($"{DateTime.UtcNow} [Unhandled exception] - {args.ExceptionObject}");
-            };
-#endif
         }
 
         private void PopulateExporType()
@@ -50,7 +47,7 @@ namespace Monitorizare
         {
             if (keyData == Keys.Escape)
             {
-                this.Close();
+                Close();
                 return true;
             }
 
@@ -81,6 +78,7 @@ namespace Monitorizare
         private static void SetPickerRange(IEnumerable<KryptonDateTimePicker> pickers, (long Min, long Max) bounds)
         {
             var (min, max) = (bounds.Min.ExtractDateTime(), bounds.Max.ExtractDateTime());
+
             foreach (var picker in pickers)
                 (picker.MinDate, picker.MaxDate) = (min, max);
         }
@@ -88,12 +86,16 @@ namespace Monitorizare
         private async Task LoadDataAsync()
         {
             DataGridViewIncarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Incarcare)).ToList();
-            DataGridViewIncarcare.RenameHeaders(new[] { "#", "Data", "Ora" });
-            DataGridViewIncarcare.SetColumnsWidth(new[] { 50, 80, 65, 65, 65, 65, 65 });
+            DataGridViewAdjustColumns(DataGridViewIncarcare);
 
             DataGridViewDescarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Descarcare)).ToList();
-            DataGridViewDescarcare.RenameHeaders(new[] { "#", "Data", "Ora" });
-            DataGridViewDescarcare.SetColumnsWidth(new[] { 50, 80, 65, 65, 65, 65, 65 });
+            DataGridViewAdjustColumns(DataGridViewDescarcare);
+        }
+
+        private static void DataGridViewAdjustColumns(DataGridView dataGrid)
+        {
+            dataGrid.RenameHeaders(new[] { "#", "Data", "Ora" });
+            dataGrid.SetColumnsWidth(new[] { 50, 80, 65, 65, 65, 65, 65 });
         }
 
         private void DataGridViewIncarcare_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e) =>

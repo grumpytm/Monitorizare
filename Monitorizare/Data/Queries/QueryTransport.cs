@@ -23,11 +23,11 @@ public class QueryTransport : QueryDatabase
         return new[] { new DateTimeBoundsDTO(now, now) };
     }
 
-    public async Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(long min, long max) =>
-        await LoadRecordsAsync("incarcare", "data, siloz, greutate", ProcessIncarcareData, min, max);
+    public async Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds) =>
+        await LoadRecordsAsync("incarcare", "data, siloz, greutate", ProcessIncarcareData, bounds);
 
-    public async Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(long min, long max) =>
-        await LoadRecordsAsync("descarcare", "data, siloz, greutate, hala, buncar", ProcessDescarcareData, min, max);
+    public async Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds) =>
+        await LoadRecordsAsync("descarcare", "data, siloz, greutate, hala, buncar", ProcessDescarcareData, bounds);
 
     public async Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords() =>
         await LoadRecordsAsync("incarcare", "data, siloz, greutate", ProcessIncarcareData);
@@ -35,39 +35,41 @@ public class QueryTransport : QueryDatabase
     public async Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords() =>
         await LoadRecordsAsync("descarcare", "data, siloz, greutate, hala, buncar", ProcessDescarcareData);
 
-    public IAsyncEnumerable<IDictionary<string, object>> ExportIncarcareBetween(long min, long max) => ExportTableAsync("incarcare", min, max, reader =>
-            {
-                var (date, time) = reader["data"].ConvertTo<long>().ExtractDateAndTime();
-                return new Dictionary<string, object>
-                {
-                    ["Data"] = date.ToString("dd.MM.yyyy"),
-                    ["Ora"] = time,
-                    ["Siloz"] = reader["siloz"].ConvertTo<int>(),
-                    ["Greutate"] = reader["greutate"].ConvertTo<int>()
-                };
-            });
-
-    public IAsyncEnumerable<IDictionary<string, object>> ExportDescarcareBetween(long min, long max) => ExportTableAsync("descarcare", min, max, reader =>
-    {
-        var (date, time) = reader["data"].ConvertTo<long>().ExtractDateAndTime();
-        return new Dictionary<string, object>
+    public IAsyncEnumerable<IDictionary<string, object>> ExportIncarcareBetween(DateBounds bounds) =>
+        ExportTableAsync("incarcare", bounds.Min, bounds.Max, reader =>
         {
-            ["Data"] = date.ToString("dd.MM.yyyy"),
-            ["Ora"] = time,
-            ["Siloz"] = reader["siloz"].ConvertTo<int>(),
-            ["Greutate"] = reader["greutate"].ConvertTo<int>(),
-            ["Hala"] = reader["hala"].ConvertTo<int>(),
-            ["Buncar"] = reader["buncar"].ConvertTo<int>()
-        };
-    });
+            var (date, time) = reader["data"].ConvertTo<long>().ExtractDateAndTime();
+            return new Dictionary<string, object>
+            {
+                ["Data"] = date.ToString("dd.MM.yyyy"),
+                ["Ora"] = time,
+                ["Siloz"] = reader["siloz"].ConvertTo<int>(),
+                ["Greutate"] = reader["greutate"].ConvertTo<int>()
+            };
+        });
 
-    private async Task<IEnumerable<T>> LoadRecordsAsync<T>(string table, string columns, Func<DbDataReader, T> mapFunc, long min = 0, long max = 0)
+    public IAsyncEnumerable<IDictionary<string, object>> ExportDescarcareBetween(DateBounds bounds) =>
+        ExportTableAsync("descarcare", bounds.Min, bounds.Max, reader =>
+        {
+            var (date, time) = reader["data"].ConvertTo<long>().ExtractDateAndTime();
+            return new Dictionary<string, object>
+            {
+                ["Data"] = date.ToString("dd.MM.yyyy"),
+                ["Ora"] = time,
+                ["Siloz"] = reader["siloz"].ConvertTo<int>(),
+                ["Greutate"] = reader["greutate"].ConvertTo<int>(),
+                ["Hala"] = reader["hala"].ConvertTo<int>(),
+                ["Buncar"] = reader["buncar"].ConvertTo<int>()
+            };
+        });
+
+    private async Task<IEnumerable<T>> LoadRecordsAsync<T>(string table, string columns, Func<DbDataReader, T> mapFunc, DateBounds bounds = default)
     {
         try
         {
-            string whereClause = (min == 0 || max == 0)
+            string whereClause = (bounds.Min == 0 || bounds.Max == 0)
                 ? $"strftime('%Y-%m-%d', datetime(data, 'unixepoch', 'localtime')) IN (SELECT strftime('%Y-%m-%d', datetime(MAX(data), 'unixepoch', 'localtime')) FROM {table})"
-                : $" {"data".ToStrftime()} BETWEEN {min.ToStrftime()} AND {max.ToStrftime()}";
+                : $" {"data".ToStrftime()} BETWEEN {bounds.Min.ToStrftime()} AND {bounds.Max.ToStrftime()}";
 
             var query = $"SELECT {columns} FROM {table} WHERE {whereClause} ORDER BY data ASC";
             return await FetchAndMapAsync(query, mapFunc);
@@ -128,7 +130,7 @@ public class QueryTransport : QueryDatabase
     private async IAsyncEnumerable<IDictionary<string, object>> ExportTableAsync(string table, long min, long max, Func<DbDataReader, IDictionary<string, object>> mapRow)
     {
         await using var connection = CreateConnection();
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
 
         using var command = connection.CreateCommand();
         command.CommandText = $"SELECT * FROM {table} WHERE {"data".ToStrftime()} BETWEEN {min.ToStrftime()} AND {max.ToStrftime()} ORDER BY data ASC";

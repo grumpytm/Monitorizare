@@ -26,7 +26,7 @@ public class DatabaseMigrations
     public async Task ApplyMigrationsAsync()
     {
         await using var connection = CreateConnection();
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
 
         ExistingTables = await connection.GetExistingTablesAsync();
         var lastMigration = string.Empty;
@@ -54,7 +54,7 @@ public class DatabaseMigrations
         try
         {
             await using var connection = CreateConnection();
-            await connection.OpenAsyncConnection();
+            await connection.EnsureOpenAsync();
 
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT MAX(file) FROM migrations";
@@ -97,7 +97,7 @@ public class DatabaseMigrations
                 .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("--"));
 
             await using var connection = CreateConnection();
-            await connection.OpenAsyncConnection();
+            await connection.EnsureOpenAsync();
 
             using var transaction = await connection.BeginTransactionAsync();
             using var command = connection.CreateCommand();
@@ -137,7 +137,7 @@ public class DatabaseMigrations
         if (!migrations.Any()) return;
 
         await using var connection = CreateConnection();
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
 
         using var command = connection.CreateCommand();
         using var transaction = await connection.BeginTransactionAsync();

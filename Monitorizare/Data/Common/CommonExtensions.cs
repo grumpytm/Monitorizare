@@ -43,7 +43,7 @@ public static class CommonExtensions
 
     public static async Task<IEnumerable<string>> GetExistingTablesAsync(this DbConnection connection)
     {
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
         return connection.GetSchema("Tables")
             .AsEnumerable()
             .Select(x => x[2]?.ToString() ?? string.Empty)
@@ -66,7 +66,7 @@ public static class CommonExtensions
     private static string GetRecordColumns<T>(this T record) where T : class =>
         string.Join(", ", record.GetProperty(p => p.Name.ToLower()));
 
-    public static async Task OpenAsyncConnection(this DbConnection connection)
+    public static async Task EnsureOpenAsync(this DbConnection connection)
     {
         if (connection.State != ConnectionState.Open)
             await connection.OpenAsync();

@@ -11,13 +11,14 @@ public class TransportRecordSaver
     public TransportRecordSaver() =>
         _logger = LoggerFactory.CreateLogger();
 
-    public async Task<int> SaveRecordsAsync(IEnumerable<ITransport> records)
+
+    public async Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records)
     {
         if (!records.Any()) return 0;
 
         int affectedRows = 0;
         await using var connection = CreateConnection();
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
 
         using var transaction = await connection.BeginTransactionAsync();
         using var command = connection.CreateCommand();
@@ -25,8 +26,10 @@ public class TransportRecordSaver
 
         try
         {
+            var (table, columns) = records.First().GetTableAndColumns();
+
             foreach (var record in records)
-                affectedRows += await InsertRecordAsync(command, record);
+                affectedRows += await InsertRecordAsync(command, record, table, columns);
 
             await transaction.CommitAsync();
         }
@@ -39,9 +42,8 @@ public class TransportRecordSaver
         return affectedRows;
     }
 
-    private static async Task<int> InsertRecordAsync(DbCommand command, ITransport record)
+    private static async Task<int> InsertRecordAsync<T>(DbCommand command, T record, string table, string columns) where T : class
     {
-        var (table, columns) = record.GetTableAndColumns();
         var values = record.GetProperty(p => $"@{p.Name}");
         var parameters = record.ExtractParameters();
 

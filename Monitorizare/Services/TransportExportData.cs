@@ -15,6 +15,9 @@ public class TransportExportData
         _database = DatabaseFactory.GetDatabase();
     }
 
+    delegate Task<IEnumerable<IncarcareDTO>> IncarcareSource();
+    delegate Task<IEnumerable<DescarcareDTO>> DescarcareSource();
+
     public void SetBounds((long, long) incarcare, (long, long) descarcare)
     {
         IncarcareBounds = incarcare;
@@ -24,6 +27,7 @@ public class TransportExportData
     public async Task Export(int exportType)
     {
         var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "Export.xlsx");
+
         try
         {
             var sheets = exportType switch
@@ -35,7 +39,10 @@ public class TransportExportData
             };
 
             MiniExcel.SaveAs(filePath, sheets, overwriteFile: true);
-            MessageBox.Show("Baza de date a fost exportata pe perioada selectata in fisierul 'Export.xls' pe care il gasesti pe Desktop.", "Exportare continut", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            sheets.Clear();
+
+            var message = "Baza de date a fost exportata pe perioada selectata in fisierul 'Export.xls' pe care il gasesti pe Desktop.";
+            MessageBox.Show(message, "Exportare continut", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
@@ -51,8 +58,8 @@ public class TransportExportData
 
         return await PrepareExportAsync
         (
-            () => _database.LoadIncarcareWithin(incarcare.Min, incarcare.Max),
-            () => _database.LoadDescarcareWithin(descarcare.Min, descarcare.Max)
+            () => _database.LoadIncarcareWithin(new DateBounds(incarcare.Min, incarcare.Max)),
+            () => _database.LoadDescarcareWithin(new DateBounds(descarcare.Min, descarcare.Max))
         );
     }
 
@@ -60,14 +67,12 @@ public class TransportExportData
     {
         return await PrepareExportAsync
         (
-            () => _database.LoadIncarcareWithin(IncarcareBounds.Item1, IncarcareBounds.Item2),
-            () => _database.LoadDescarcareWithin(DescarcareBounds.Item1, DescarcareBounds.Item2)
+            () => _database.LoadIncarcareWithin(new DateBounds(IncarcareBounds.Item1, IncarcareBounds.Item2)),
+            () => _database.LoadDescarcareWithin(new DateBounds(DescarcareBounds.Item1, DescarcareBounds.Item2))
         );
     }
 
-    private static async Task<Dictionary<string, object>> PrepareExportAsync(
-        Func<Task<IEnumerable<IncarcareDTO>>> incarcareSource,
-        Func<Task<IEnumerable<DescarcareDTO>>> descarcareSource)
+    private static async Task<Dictionary<string, object>> PrepareExportAsync(IncarcareSource incarcareSource, DescarcareSource descarcareSource)
     {
         var incarcare = (await incarcareSource()).Select(x => new Dictionary<string, object>
         {

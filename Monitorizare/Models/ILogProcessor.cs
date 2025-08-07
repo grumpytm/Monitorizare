@@ -2,5 +2,6 @@ namespace Monitorizare.Models;
 
 public interface ILogProcessor
 {
-    Task<IEnumerable<ITransport>> TryParseFileAsync(string filePath);
+    Task<IEnumerable<TransportLog>> TryParseLoadingAsync(string filePath);
+    Task<IEnumerable<TransportLog>> TryParseUnloadingAsync(string filePath);
 }

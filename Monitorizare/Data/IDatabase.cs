@@ -7,11 +7,11 @@ public interface IDatabase
     public Task LogWarningAsync(string message, string? details = null);
     public Task LogErrorAsync(string message, string? details = null);
     public Task LogExceptionAsync(Exception ex);
-    public Task<int> SaveRecordsAsync(IEnumerable<ITransport> records);
+    public Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records);
     public Task<IEnumerable<LogsDTO>> FetchLogsAsync();
     public Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table);
-    public Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(long min, long max);
-    public Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(long min, long max);
+    public Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds);
+    public Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds);
     public Task<IEnumerable<LastDatesDTO>> GetMaxDates();
     public Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords();
     public Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords();

@@ -11,7 +11,7 @@ public abstract class QueryDatabase
     {
         var resultList = new List<T>();
         await using var connection = CreateConnection();
-        await connection.OpenAsyncConnection();
+        await connection.EnsureOpenAsync();
 
         try
         {

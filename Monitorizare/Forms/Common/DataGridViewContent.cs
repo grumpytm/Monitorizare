@@ -9,13 +9,13 @@ public class DataGridViewContent
         _database = DatabaseFactory.GetDatabase();
     }
 
-    public async Task<IEnumerable<TransportContentDTO>> LoadData(UITabNames tab, long min, long max)
+    public async Task<IEnumerable<TransportContentDTO>> LoadData(UITabNames tab, DateBounds bounds)
     {
         return tab switch
         {
-            UITabNames.Incarcare => (await _database.LoadIncarcareWithin(min, max))
+            UITabNames.Incarcare => (await _database.LoadIncarcareWithin(bounds))
                 .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, 0, 0)),
-            UITabNames.Descarcare => (await _database.LoadDescarcareWithin(min, max))
+            UITabNames.Descarcare => (await _database.LoadDescarcareWithin(bounds))
                 .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, item.Hala, item.Buncar)),
             _ => Enumerable.Empty<TransportContentDTO>()
         };

@@ -32,7 +32,7 @@ public class SQLiteDatabase : IDatabase
     public async Task LogExceptionAsync(Exception ex) =>
         await _logger.LogExceptionAsync(ex);
 
-    public async Task<int> SaveRecordsAsync(IEnumerable<ITransport> records) =>
+    public async Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records) =>
         await _transportSaver.SaveRecordsAsync(records);
 
     public async Task<IEnumerable<LogsDTO>> FetchLogsAsync() =>
@@ -41,11 +41,11 @@ public class SQLiteDatabase : IDatabase
     public async Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table) =>
         await _queryTransport.GetMinMaxFor(table);
 
-    public async Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(long min, long max) =>
-        await _queryTransport.LoadIncarcareWithin(min, max);
+    public async Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds) =>
+        await _queryTransport.LoadIncarcareWithin(bounds);
 
-    public async Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(long min, long max) =>
-        await _queryTransport.LoadDescarcareWithin(min, max);
+    public async Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds) =>
+        await _queryTransport.LoadDescarcareWithin(bounds);
 
     public async Task<IEnumerable<LastDatesDTO>> GetMaxDates() =>
         await _queryTransport.GetMaxDates();

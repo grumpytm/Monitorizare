@@ -28,16 +28,4 @@ public static class LogProcessorExtensions
 
     private static long ToUnixTimestamp(this DateTime dateTime) =>
         new DateTimeOffset(dateTime).ToUnixTimeSeconds();
-
-    public static IEnumerable<ITransport> ToTransportType(this List<string> parts, string filePath)
-    {
-        ITransport records = Path.GetFileName(filePath) switch
-        {
-            "Incarcare.log" => new Incarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>()),
-            "Descarcare.log" => new Descarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>(), parts[3].ConvertTo<int>(), parts[4].ConvertTo<int>()),
-            _ => throw new ArgumentException($"Invalid file name: {filePath ?? "<null>"}")
-        };
-
-        return Enumerable.Empty<ITransport>().Append(records);
-    }
 }

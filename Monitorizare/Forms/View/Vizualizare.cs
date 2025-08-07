@@ -21,17 +21,8 @@ public partial class Vizualizare : MetroForm
         CurrentTab = 0;
         _ = LoadLastDataAsync();
         _ = SetDateTimeBounds();
-        DataGridView.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
-        DataGridView.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
-        FormClosing += (sender, args) => Vizualizare_FormClosing(sender, args);
         Shown += (sender, args) => Vizualizare_FormShown(sender, args);
-
-#if DEBUG
-        AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-        {
-            Console.WriteLine($"{DateTime.UtcNow} [Unhandled exception] - {args.ExceptionObject}");
-        };
-#endif
+        FormClosing += (sender, args) => Vizualizare_FormClosing(sender, args);
     }
 
     // 'ESC' key to close
@@ -44,14 +35,19 @@ public partial class Vizualizare : MetroForm
         return true;
     }
 
-    private void Vizualizare_FormShown(object? sender, EventArgs e) =>
+    private void Vizualizare_FormShown(object? sender, EventArgs e)
+    {
         PopulateComboBoxes();
+        DataGridView.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
+        DataGridView.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
+    }
 
     private void Vizualizare_FormClosing(object? sender, FormClosingEventArgs e)
     {
         var reasons = new List<CloseReason> { CloseReason.WindowsShutDown, CloseReason.ApplicationExitCall, CloseReason.TaskManagerClosing };
         if (!reasons.Contains(e.CloseReason)) FindForm().Dispose();
         DataGridView.DataSource = null; // purge the data source
+        DataGridView.DataBindingComplete -= (sender, args) => DataGridView_DataBindingComplete(sender, args);
     }
 
     private async void TabControl_SelectedIndexchanged(object sender, EventArgs e)
@@ -110,16 +106,18 @@ public partial class Vizualizare : MetroForm
         if (string.IsNullOrEmpty(CurrentTabName)) return;
 
         var (min, max) = DatePickerContent.ParseBounds(DateTimePickerMin, DateTimePickerMax);
-        _content = await _dataGridViewContent.LoadData(CurrentTab, min, max);
-
-        LockControls();
-        DataGridView.DataSource = _content.ToList();
-        DataGridViewCleanup();
+        _content = await _dataGridViewContent.LoadData(CurrentTab, new DateBounds(min, max));
+        PopulateDataGridView();
     }
 
     private async Task LoadLastDataAsync()
     {
         _content = await _dataGridViewContent.LoadLastData(CurrentTab);
+        PopulateDataGridView();
+    }
+
+    private void PopulateDataGridView()
+    {
         DataGridView.DataSource = _content.ToList();
         DataGridViewCleanup();
         LockControls();
