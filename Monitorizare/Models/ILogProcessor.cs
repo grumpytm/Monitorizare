@@ -1,7 +1,8 @@
+using System.Collections.Immutable;
+
 namespace Monitorizare.Models;
 
 public interface ILogProcessor
 {
-    Task<IEnumerable<TransportLog>> TryParseLoadingAsync(string filePath);
-    Task<IEnumerable<TransportLog>> TryParseUnloadingAsync(string filePath);
+    Task<ImmutableList<TransportType>> TryParseLogAsync(string filePath);
 }

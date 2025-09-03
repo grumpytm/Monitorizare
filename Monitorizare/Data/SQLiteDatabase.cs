@@ -2,60 +2,33 @@ namespace Monitorizare.Data;
 
 public class SQLiteDatabase : IDatabase
 {
-    private readonly ILogger _logger;
-    private readonly DatabaseMigrations _databaseMigrations;
-    private readonly QueryLogs _queryLogs;
-    private readonly TransportRecordSaver _transportSaver;
-    private readonly QueryTransport _queryTransport;
+    public ILogger Logger { get; }
+    public DatabaseMigrations Migrations { get; }
+    public QueryLogs Logs { get; }
+    public TransportRecordSaver Records { get; }
+    public QueryTransport Transport { get; }
 
-    public SQLiteDatabase(ILogger logger, DatabaseMigrations databaseMigrations, QueryLogs queryLogs, TransportRecordSaver transportSaver, QueryTransport queryTransport)
+    public SQLiteDatabase(ILogger logger, DatabaseMigrations migrations, QueryLogs logs, TransportRecordSaver records, QueryTransport transport)
     {
-        _logger = logger;
-        _databaseMigrations = databaseMigrations;
-        _queryLogs = queryLogs;
-        _transportSaver = transportSaver;
-        _queryTransport = queryTransport;
+        Logger = logger;
+        Migrations = migrations;
+        Logs = logs;
+        Records = records;
+        Transport = transport;
     }
 
-    public async Task ApplyMigrationsAsync() =>
-        await _databaseMigrations.ApplyMigrationsAsync();
-
-    public async Task LogInfoAsync(string message, string? details = null) =>
-        await _logger.LogInfoAsync(message, details);
-
-    public async Task LogWarningAsync(string message, string? details = null) =>
-        await _logger.LogWarningAsync(message, details);
-
-    public async Task LogErrorAsync(string message, string? details = null) =>
-        await _logger.LogErrorAsync(message, details);
-
-    public async Task LogExceptionAsync(Exception ex) =>
-        await _logger.LogExceptionAsync(ex);
-
-    public async Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records) =>
-        await _transportSaver.SaveRecordsAsync(records);
-
-    public async Task<IEnumerable<LogsDTO>> FetchLogsAsync() =>
-        await _queryLogs.FetchLogs();
-
-    public async Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table) =>
-        await _queryTransport.GetMinMaxFor(table);
-
-    public async Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds) =>
-        await _queryTransport.LoadIncarcareWithin(bounds);
-
-    public async Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds) =>
-        await _queryTransport.LoadDescarcareWithin(bounds);
-
-    public async Task<IEnumerable<LastDatesDTO>> GetMaxDates() =>
-        await _queryTransport.GetMaxDates();
-
-    public async Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords() =>
-        await _queryTransport.LastIncarcareRecords();
-
-    public async Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords() =>
-        await _queryTransport.LastDescarcareRecords();
-
-    public async Task<IEnumerable<LongBoundsDTO>> GetTransportBounds() =>
-        await _queryTransport.GetTransportBounds();
+    public Task ApplyMigrationsAsync() => Migrations.ApplyMigrationsAsync();
+    public Task LogInfoAsync(string message, string? details = null) => Logger.LogInfoAsync(message, details);
+    public Task LogWarningAsync(string message, string? details = null) => Logger.LogWarningAsync(message, details);
+    public Task LogErrorAsync(string message, string? details = null) => Logger.LogErrorAsync(message, details);
+    public Task LogExceptionAsync(Exception ex) => Logger.LogExceptionAsync(ex);
+    public Task<int> SaveRecordsAsync(IEnumerable<TransportType> records) => Records.SaveRecordsAsync(records);
+    public Task<IEnumerable<LogsDTO>> FetchLogsAsync() => Logs.FetchLogs();
+    public Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table) => Transport.GetMinMaxFor(table);
+    public Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds) => Transport.LoadIncarcareWithin(bounds);    
+    public Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds) => Transport.LoadDescarcareWithin(bounds);
+    public Task<IEnumerable<LastDatesDTO>> GetMaxDates() => Transport.GetMaxDates();
+    public Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords() => Transport.LastIncarcareRecords();
+    public Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords() => Transport.LastDescarcareRecords();
+    public Task<IEnumerable<LongBoundsDTO>> GetTransportBounds() => Transport.GetTransportBounds();
 }

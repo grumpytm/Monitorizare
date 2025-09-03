@@ -6,7 +6,6 @@ namespace Monitorizare
 {
     public partial class Exporta : MetroForm
     {
-        private readonly ILogger _logger;
         private readonly IDatabase _database;
         private readonly Dictionary<DataGridView, DataGridViewSorting> _sortHelpers = new();
         private readonly DataGridViewContent _dataGridViewContent = new();
@@ -16,9 +15,22 @@ namespace Monitorizare
         {
             InitializeComponent();
 
-            _logger = LoggerFactory.CreateLogger();
             _database = DatabaseFactory.GetDatabase();
             Shown += (sender, args) => Exporta_FormShown(sender, args);
+            FormClosing += (sender, args) => Exporta_FormClosing(sender, args);
+
+            DataGridViewIncarcare.DataBindingComplete += (sender, args) =>
+            {
+                DataGridViewIncarcare.BeginInvoke(() => DataGridViewIncarcare.ClearSelection());
+                DataGridViewIncarcare.HighlightRowsWithIssues();
+                DataGridViewIncarcare.RemoveColumns(new[] { "Hala", "Buncar" });
+            };
+
+            DataGridViewDescarcare.DataBindingComplete += (sender, args) =>
+            {
+                DataGridViewDescarcare.BeginInvoke(() => DataGridViewDescarcare.ClearSelection());
+                DataGridViewIncarcare.HighlightRowsWithIssues();
+            };
         }
 
         private void Exporta_FormShown(object? sender, EventArgs e)
@@ -28,11 +40,17 @@ namespace Monitorizare
 
             PopulateExporType();
             ComboBoxExportType.SelectedIndexChanged += ComboBox_SelectedIndexChanged;
-            DataGridViewIncarcare.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
-            DataGridViewDescarcare.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
-
             DataGridViewIncarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
             DataGridViewDescarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
+        }
+
+        private void Exporta_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            var reasons = new List<CloseReason> { CloseReason.WindowsShutDown, CloseReason.ApplicationExitCall, CloseReason.TaskManagerClosing };
+            if (!reasons.Contains(e.CloseReason)) FindForm().Dispose();
+
+            DataGridViewIncarcare.DataSource = null; // purge the data source
+            DataGridViewDescarcare.DataSource = null;
         }
 
         private void PopulateExporType()
@@ -111,18 +129,6 @@ namespace Monitorizare
                 _sortHelpers[dataGridView] = helper = new DataGridViewSorting();
 
             helper.ColumnHeaderMouseClick(dataGridView, e.ColumnIndex);
-        }
-
-        private void DataGridView_DataBindingComplete(object? sender, DataGridViewBindingCompleteEventArgs e)
-        {
-            if (sender as KryptonDataGridView == null) return;
-            var dataGridView = sender.ConvertTo<KryptonDataGridView>();
-            dataGridView.HighlightRowsWithIssues();
-
-            if (dataGridView.Name == "DataGridViewIncarcare")
-                dataGridView.RemoveUnusedColumns(new[] { "Hala", "Buncar" });
-
-            dataGridView.ClearSelection();
         }
 
         private async Task ExportData()

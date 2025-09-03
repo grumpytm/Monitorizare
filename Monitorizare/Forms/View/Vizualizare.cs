@@ -19,10 +19,20 @@ public partial class Vizualizare : MetroForm
         InitializeComponent();
 
         CurrentTab = 0;
-        _ = LoadLastDataAsync();
-        _ = SetDateTimeBounds();
         Shown += (sender, args) => Vizualizare_FormShown(sender, args);
         FormClosing += (sender, args) => Vizualizare_FormClosing(sender, args);
+
+        _ = LoadLastDataAsync();
+        _ = SetDateTimeBounds();
+
+        DataGridView.DataBindingComplete += (sender, args) =>
+        {
+            DataGridView.BeginInvoke(() => DataGridView.ClearSelection());
+            DataGridView.HighlightRowsWithIssues();
+
+            if (IsIncarcareTab)
+                DataGridView.RemoveColumns(new[] { "Hala", "Buncar" });
+        };
     }
 
     // 'ESC' key to close
@@ -39,7 +49,6 @@ public partial class Vizualizare : MetroForm
     {
         PopulateComboBoxes();
         DataGridView.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
-        DataGridView.DataBindingComplete += (sender, args) => DataGridView_DataBindingComplete(sender, args);
     }
 
     private void Vizualizare_FormClosing(object? sender, FormClosingEventArgs e)
@@ -47,7 +56,7 @@ public partial class Vizualizare : MetroForm
         var reasons = new List<CloseReason> { CloseReason.WindowsShutDown, CloseReason.ApplicationExitCall, CloseReason.TaskManagerClosing };
         if (!reasons.Contains(e.CloseReason)) FindForm().Dispose();
         DataGridView.DataSource = null; // purge the data source
-        DataGridView.DataBindingComplete -= (sender, args) => DataGridView_DataBindingComplete(sender, args);
+        _content = Enumerable.Empty<TransportContentDTO>();
     }
 
     private async void TabControl_SelectedIndexchanged(object sender, EventArgs e)
@@ -67,15 +76,6 @@ public partial class Vizualizare : MetroForm
         PopulateComboBoxes();
         DataGridView.ResetHeaderCellStyle();
         RefreshButton.Enabled = true;
-    }
-
-    private void DataGridView_DataBindingComplete(object? sender, DataGridViewBindingCompleteEventArgs e)
-    {
-        DataGridView.BeginInvoke(() => DataGridView.ClearSelection());
-        DataGridView.HighlightRowsWithIssues();
-
-        if (IsIncarcareTab)
-            DataGridView.RemoveUnusedColumns(new[] { "Hala", "Buncar" });
     }
 
     private async Task SetDateTimeBounds()
@@ -123,18 +123,18 @@ public partial class Vizualizare : MetroForm
         LockControls();
     }
 
-    private void LockControls()
-    {
-        foreach (var control in new Control[] { ComboBoxSiloz, ComboBoxHala, ComboBoxBuncar, DateTimePickerMin, DateTimePickerMax, RefreshButton })
-            control.Enabled = _content.Any();
-    }
-
     private void DataGridViewCleanup()
     {
         ResizeCurrentTabControls();
         HideUnusedElements();
         ApplyCustomStyle();
         ShowFilterDetails();
+    }
+
+    private void LockControls()
+    {
+        foreach (var control in new Control[] { ComboBoxSiloz, ComboBoxHala, ComboBoxBuncar, DateTimePickerMin, DateTimePickerMax, RefreshButton })
+            control.Enabled = _content.Any();
     }
 
     private void ApplyCustomStyle()

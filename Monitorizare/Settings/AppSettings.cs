@@ -4,45 +4,30 @@ namespace Monitorizare.Settings;
 
 public class AppSettings : IAppSettings
 {
-    public IConfiguration Configuration { get; private set; }
+    public IConfiguration Configuration { get; }
 
     public AppSettings() =>
         Configuration = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("Settings.json", optional: false, reloadOnChange: true)
-        .Build();
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("Settings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-    public Dictionary<string, string?> GetServerDetails() =>
-        GetConfigurationDictionary("Server:Details");
+    public Dictionary<string, string?> ServerDetails => GetDictionary("Server:Details");
+    public IEnumerable<string> FilesList => GetList("Server:Files");
+    public string DatabaseFile => GetValue("Database:File");
+    public string LocalPath => GetValue("Server:Details:LocalPath");
+    public string MigrationsPath => GetValue("Paths:Migrations");
 
-    public IEnumerable<string> GetFileList()
-    {
-        var localPath = GetLocalPath();
-        return GetConfigurationValues("Server:Files")
-        .Select(file => Path.Combine(localPath, file))
-        .Where(filePath => File.Exists(filePath))
-        .OfType<string>();
-    }
-
-    public Dictionary<string, string?> GetStoredQueries() =>
-        GetConfigurationDictionary("Database:Schema");
-
-    public string GetDatabasePath() =>
-        GetConfigurationValue("Database:File");
-
-    public string GetLocalPath() =>
-        GetConfigurationValue("Server:Details:LocalPath");
-
-    private Dictionary<string, string?> GetConfigurationDictionary(string section) =>
+    private Dictionary<string, string?> GetDictionary(string section) =>
         Configuration.GetSection(section).GetChildren()
-        .ToDictionary(child => child.Key, child => child.Value);
+            .ToDictionary(child => child.Key, child => child.Value);
 
-    private IEnumerable<string> GetConfigurationValues(string section) =>
+    private IEnumerable<string> GetList(string section) =>
         Configuration.GetSection(section).GetChildren()
-        .Select(child => child.Value)
-        .Where(value => value.NotEmpty())
-        .OfType<string>() ?? Enumerable.Empty<string>();
+            .Select(child => child.Value)
+            .Where(value => value.NotEmpty())
+            .OfType<string>() ?? Enumerable.Empty<string>();
 
-    private string GetConfigurationValue(string section) =>
+    private string GetValue(string section) =>
         Configuration.GetSection(section).Value ?? string.Empty;
 }

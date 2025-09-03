@@ -5,31 +5,38 @@ namespace Monitorizare.Data;
 public class TransportRecordSaver
 {
     private readonly ILogger _logger;
+
     private static DbConnection CreateConnection() =>
         SingletonDB.Instance.CreateConnection();
 
     public TransportRecordSaver() =>
         _logger = LoggerFactory.CreateLogger();
 
-
-    public async Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records)
+    public async Task<int> SaveRecordsAsync<T>(IEnumerable<T> records) where T : class
     {
         if (!records.Any()) return 0;
 
         int affectedRows = 0;
-        await using var connection = CreateConnection();
+        using var connection = CreateConnection();
         await connection.EnsureOpenAsync();
 
         using var transaction = await connection.BeginTransactionAsync();
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
 
+        var first = records.First();
+        var (table, columns) = first.GetTableAndColumns();
+        var values = string.Join(", ", columns.Select(c => $"@{c}"));
+        var uniqueKey = columns.First();
+
+        // Prepare SQL statements
+        command.CommandText = $"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({values}) ON CONFLICT ({uniqueKey}) DO NOTHING";
+        command.Prepare();
+
         try
         {
-            var (table, columns) = records.First().GetTableAndColumns();
-
             foreach (var record in records)
-                affectedRows += await InsertRecordAsync(command, record, table, columns);
+                affectedRows += await InsertRecordAsync(command, record);
 
             await transaction.CommitAsync();
         }
@@ -42,12 +49,10 @@ public class TransportRecordSaver
         return affectedRows;
     }
 
-    private static async Task<int> InsertRecordAsync<T>(DbCommand command, T record, string table, string columns) where T : class
+    private static async Task<int> InsertRecordAsync<T>(DbCommand command, T record) where T : class
     {
-        var values = record.GetProperty(p => $"@{p.Name}");
+        command.Parameters.Clear();
         var parameters = record.ExtractParameters();
-
-        command.CommandText = $"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({string.Join(", ", values)})";
         command.AddParameters(parameters);
         return await command.ExecuteNonQueryAsync();
     }

@@ -8,7 +8,6 @@ public class DatabaseFactory
         var queryLogs = new QueryLogs();
         var transportRecordSaver = new TransportRecordSaver();
         var queryTransport = new QueryTransport();
-        var settings = new AppSettings();
         var databaseMigrations = new DatabaseMigrations(logger);
 
         return new SQLiteDatabase(logger, databaseMigrations, queryLogs, transportRecordSaver, queryTransport);

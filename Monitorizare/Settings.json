@@ -19,5 +19,9 @@
       "Incarcare.log",
       "Descarcare.log"
     ]
+  },
+  "Paths": {
+    "Logs": "logs",
+    "Migrations": "migrations"
   }
 }

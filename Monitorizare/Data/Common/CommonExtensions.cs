@@ -6,14 +6,13 @@ namespace Monitorizare.Data.Common;
 
 public static class CommonExtensions
 {
+    // Date specific
+
     public static long ToUnixTime(this DateTime date) =>
         new DateTimeOffset(date).ToUnixTimeSeconds();
 
     public static string ToStrftime<T>(this T value) =>
         $"strftime('%Y-%m-%d', datetime({value}, 'unixepoch', 'localtime'))";
-
-    public static T ConvertTo<T>(this object obj) =>
-        (T)Convert.ChangeType(obj, typeof(T));
 
     public static (DateOnly, TimeOnly) ExtractDateAndTime(this long timestamp) =>
         timestamp.ExtractDateTime().ExtractDateAndTime();
@@ -27,31 +26,13 @@ public static class CommonExtensions
     public static DateOnly ExtractDateOnly(this long timestamp) =>
         DateOnly.FromDateTime(timestamp.ExtractDateTime());
 
-    public static void AddParameter(this IDbCommand command, string name, object value)
-    {
-        var param = command.CreateParameter();
-        param.ParameterName = name;
-        param.Value = value ?? DBNull.Value;
-        command.Parameters.Add(param);
-    }
+    // Reflection specific
 
-    public static void AddParameters(this IDbCommand command, Dictionary<string, object> parameters)
-    {
-        foreach (var (name, value) in parameters)
-            command.AddParameter(name, value);
-    }
+    public static T ConvertTo<T>(this object obj) =>
+        (T)Convert.ChangeType(obj, typeof(T));
 
-    public static async Task<IEnumerable<string>> GetExistingTablesAsync(this DbConnection connection)
-    {
-        await connection.EnsureOpenAsync();
-        return connection.GetSchema("Tables")
-            .AsEnumerable()
-            .Select(x => x[2]?.ToString() ?? string.Empty)
-            .Where(table => table.NotEmpty());
-    }
-
-    public static (string, string) GetTableAndColumns<T>(this T record) where T : class =>
-        (record.GetType().Name.ToLower(), record.GetRecordColumns());
+    public static (string, IEnumerable<string>) GetTableAndColumns<T>(this T record) where T : class =>
+        (record.GetType().Name.ToLower(), record.GetProperty(p => p.Name));
 
     public static Dictionary<string, object> ExtractParameters<T>(this T record) where T : class =>
         record.GetProperty(p => new KeyValuePair<string, object>($"@{p.Name}", p.GetValue(record) ?? DBNull.Value))
@@ -63,12 +44,42 @@ public static class CommonExtensions
     public static IEnumerable<KeyValuePair<string, object>> GetProperty<T>(this T record, Func<PropertyInfo, KeyValuePair<string, object>> property) where T : class =>
         record.GetType().GetProperties().Select(property);
 
-    private static string GetRecordColumns<T>(this T record) where T : class =>
-        string.Join(", ", record.GetProperty(p => p.Name.ToLower()));
+    // Database specific
+
+    public static async Task<IEnumerable<string>> GetExistingTablesAsync(this DbConnection connection)
+    {
+        return (await connection.GetSchemaAsync("Tables"))
+            .AsEnumerable()
+            .Select(x => x[2]?.ToString() ?? string.Empty)
+            .Where(table => table.NotEmpty());
+    }
+
+    public static void AddParameter(this IDbCommand command, string name, object value)
+    {
+        var param = command.CreateParameter();
+        param.ParameterName = name;
+        param.Value = value ?? DBNull.Value;
+        command.Parameters.Add(param);
+    }
+
+    public static void AddParameters(this DbCommand command, Dictionary<string, object> parameters)
+    {
+        foreach (var (name, value) in parameters)
+            command.AddParameter(name, value);
+    }
 
     public static async Task EnsureOpenAsync(this DbConnection connection)
     {
         if (connection.State != ConnectionState.Open)
             await connection.OpenAsync();
+    }
+
+    public static T GetValueOrDefault<T>(this IDataRecord reader, string column, Func<object, T>? converter = null, T defaultValue = default!)
+    {
+        var value = reader[column];
+        if (value == DBNull.Value || value is null)
+            return defaultValue;
+
+        return converter == null ? value.ConvertTo<T>() : converter(value);
     }
 }

@@ -11,32 +11,14 @@ public class DatabaseMigrations
     private readonly List<LogEntry> MigrationMessages = new();
     private static DbConnection CreateConnection() => SingletonDB.Instance.CreateConnection();
 
-    public DatabaseMigrations(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-# if DEBUG // Debugging purposes only
-        AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-        {
-            Console.WriteLine($"{DateTime.UtcNow} [Unhandled exception] - {args.ExceptionObject}");
-        };
-#endif
-    }
+    public DatabaseMigrations(ILogger logger) => _logger = logger;
 
     public async Task ApplyMigrationsAsync()
     {
-        await using var connection = CreateConnection();
-        await connection.EnsureOpenAsync();
-
-        ExistingTables = await connection.GetExistingTablesAsync();
-        var lastMigration = string.Empty;
-
-        if (ExistingTables.Contains("migrations"))
-            lastMigration = await GetLastAppliedMigrationAsync();
-
-        var pendingMigrations = GetPendingMigrations(lastMigration).OfType<string>();
-
+        var lastMigration = await FetchLastMigration();
+        var pendingMigrations = GetPendingMigrations(lastMigration);
         var successfulMigrations = new List<string>();
+
         foreach (var file in pendingMigrations)
         {
             var (fileName, success) = await ExecuteMigrationAsync(file);
@@ -49,40 +31,25 @@ public class DatabaseMigrations
         await RecordMigrationsAsync(successfulMigrations);
     }
 
-    private async Task<string?> GetLastAppliedMigrationAsync()
+    private async Task<string> FetchLastMigration()
     {
-        try
-        {
-            await using var connection = CreateConnection();
-            await connection.EnsureOpenAsync();
-
-            using var command = connection.CreateCommand();
-            command.CommandText = "SELECT MAX(file) FROM migrations";
-            var result = await command.ExecuteScalarAsync();
-            return result?.ToString();
-        }
-        catch (Exception ex)
-        {
-            await _logger.LogExceptionAsync(ex);
-        }
-
-        return string.Empty;
+        using var connection = CreateConnection();
+        await connection.EnsureOpenAsync();
+        ExistingTables = await connection.GetExistingTablesAsync();
+        return await QueryIfTableExistsAsync<string>("migrations", "SELECT IFNULL(MAX(file), '') AS Last FROM migrations") ?? string.Empty;
     }
 
-    private static IEnumerable<string?> GetPendingMigrations(string? lastMigration)
+    private static IEnumerable<string> GetPendingMigrations(string lastMigration)
     {
-        var migrationsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "migrations");
+        var settings = new AppSettings();
+        var migrationsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, settings.MigrationsPath);
 
-        if (!Directory.Exists(migrationsPath))
-            return Enumerable.Empty<string>();
-
-        var allFiles = Directory.EnumerateFiles(migrationsPath, "*.sql")
-            .Select(Path.GetFileName)
-            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
-
-        return string.IsNullOrEmpty(lastMigration)
-            ? allFiles
-            : allFiles.SkipWhile(f => string.Compare(f, lastMigration, StringComparison.OrdinalIgnoreCase) <= 0);
+        return !Directory.Exists(migrationsPath)
+        ? Enumerable.Empty<string>()
+        : Directory.EnumerateFiles(migrationsPath, "*.sql")
+            .Select(f => Path.GetFileName(f)!) // compiler is paranoid here cos this can’t be null
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .SkipWhile(f => lastMigration.NotEmpty() && StringComparer.OrdinalIgnoreCase.Compare(f, lastMigration) <= 0);
     }
 
     private async Task<(string, bool)> ExecuteMigrationAsync(string file)
@@ -94,9 +61,9 @@ public class DatabaseMigrations
             var sqlContent = await File.ReadAllTextAsync(filePath);
             var statements = Regex.Split(sqlContent, @"(?<=;)\s*(?=\n|$)")
                 .Select(x => x.Trim())
-                .Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("--"));
+                .Where(x => x.NotEmpty() && !x.StartsWith("--"));
 
-            await using var connection = CreateConnection();
+            using var connection = CreateConnection();
             await connection.EnsureOpenAsync();
 
             using var transaction = await connection.BeginTransactionAsync();
@@ -111,7 +78,7 @@ public class DatabaseMigrations
                 if (match.IsMatch(statement))
                 {
                     var tableName = Regex.Match(statement, pattern).Groups["name"].Value;
-                    if (ExistingTables.Contains(tableName))
+                    if (ExistingTables.Contains(tableName, StringComparer.OrdinalIgnoreCase))
                     {
                         MigrationMessages.Add(new LogEntry(LogType.Warning, $"Skipped creation of table `{tableName}` from `{file}` migration file cos it already exists."));
                         continue;
@@ -136,7 +103,7 @@ public class DatabaseMigrations
     {
         if (!migrations.Any()) return;
 
-        await using var connection = CreateConnection();
+        using var connection = CreateConnection();
         await connection.EnsureOpenAsync();
 
         using var command = connection.CreateCommand();
@@ -145,30 +112,56 @@ public class DatabaseMigrations
 
         try
         {
-            var entries = new List<LogEntry>();
+            var entryList = new List<LogEntry>();
+            command.CommandText = "INSERT INTO migrations (file, date) VALUES (@file, @date)";
+            command.Prepare();
+
+            var now = DateTime.UtcNow.ToUnixTime();
             foreach (var fileName in migrations)
             {
-                command.CommandText = "INSERT INTO migrations (file, date) VALUES (@file, @date)";
                 command.Parameters.Clear();
 
                 var parameters = new Dictionary<string, object>
                 {
                     { "@file", fileName},
-                    { "@date", DateTime.UtcNow.ToUnixTime() }
+                    { "@date", now }
                 };
 
                 command.AddParameters(parameters);
                 await command.ExecuteNonQueryAsync();
 
-                entries.Add(new LogEntry(LogType.Info, $"Migration file `{fileName}` applied successfully."));
+                entryList.Add(new LogEntry(LogType.Info, $"Migration file `{fileName}` applied successfully."));
             }
 
             await transaction.CommitAsync();
-            await _logger.LogMultipleAsync(entries);
+            await _logger.LogMultipleAsync(entryList);
         }
         catch (Exception ex)
         {
             await _logger.LogExceptionAsync(ex);
+        }
+    }
+
+    private async Task<T?> QueryIfTableExistsAsync<T>(string tableName, string sql)
+    {
+        using var connection = CreateConnection();
+        await connection.EnsureOpenAsync();
+
+        if (!ExistingTables.Contains(tableName, StringComparer.OrdinalIgnoreCase))
+            return default;
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            var result = await command.ExecuteScalarAsync();
+            return result is DBNull ? default : result!.ConvertTo<T>();
+        }
+        catch (Exception ex)
+        {
+            await _logger.LogExceptionAsync(ex);
+            return default;
         }
     }
 }

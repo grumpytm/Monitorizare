@@ -14,7 +14,7 @@ public static class LogProcessorExtensions
     public static bool PassesValidation(this string line) =>
         line.NotEmpty() && MatchesPattern.IsMatch(line);
 
-    public static List<string> ProcessTimestamp(this string line)
+    public static List<string> SplitIntoParts(this string line)
     {
         var parts = line.Split(',');
         var timestamp = parts.Take(2).ParseDateTime().ToUnixTimestamp();

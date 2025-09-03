@@ -16,24 +16,32 @@ class TransportService
 
     public async Task ProcessAndSaveLogsAsync()
     {
-        var fileList = _settings.GetFileList();
-        if (!fileList.Any()) return;
+        var fileList = _settings.FilesList;
 
-        foreach (var (file, result) in await Task.WhenAll(fileList.Select(file => ProcessAndSaveLog(file))))
-            await _logger.LogInfoAsync($"Processed '{file}' results: {result.count} valid lines, {result.affected} new records added to the database.");
+        if (!fileList.Any())
+        {
+            await _logger.LogErrorAsync("Error, missing file list in configuration file, nothing to process.");
+            return;
+        }
+
+        foreach (var (file, output) in await Task.WhenAll(fileList.Select(file => ProcessAndSaveLog(file))))
+        {
+            await (output.count == 0
+            ? _logger.LogWarningAsync($"File '{file}' hasn't been processed because it's missing.")
+            : _logger.LogInfoAsync($"Processed '{file}' results: {output.count} valid lines, {output.affected} new records added to the database."));
+        }
     }
 
-    private async Task<(string file, (int count, int affected))> ProcessAndSaveLog(string filePath)
+    private async Task<(string file, (int count, int affected))> ProcessAndSaveLog(string fileName)
     {
-        var fileName = Path.GetFileName(filePath);
-        var records = fileName switch
-        {
-            "Incarcare.log" => await _logProcessor.TryParseLoadingAsync(filePath),
-            "Descarcare.log" => await _logProcessor.TryParseUnloadingAsync(filePath),
-            _ => throw new ArgumentException($"Invalid file name: {fileName ?? "<null>"}")
-        };
+        var filePath = Path.Combine(_settings.LocalPath, fileName);
 
+        if (!File.Exists(filePath))
+            return (fileName, (0, 0));
+
+        var records = await _logProcessor.TryParseLogAsync(filePath);
         var affectedRows = await _database.SaveRecordsAsync(records);
-        return (fileName, (records.Count(), affectedRows));
+
+        return (fileName, (records.Count, affectedRows));
     }
 }

@@ -23,10 +23,13 @@ public static class DataGridViewExtensions
         cell.OwningRow.DefaultCellStyle.BackColor = backgroundColor;
     }
 
-    public static void RemoveUnusedColumns(this DataGridView datagridview, string[] collection)
+    public static void RemoveColumns(this DataGridView datagridview, string[] collection)
     {
         foreach (var name in collection)
-            datagridview.Columns.Remove(name);
+        {
+            if (datagridview.Columns.Contains(name))
+                datagridview.Columns.Remove(name);
+        }
     }
 
     public static void ChangeSizeBasedOn(this DataGridView dataGridView, UITabNames tab) =>

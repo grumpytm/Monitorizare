@@ -1,37 +1,34 @@
+using System.Collections.Immutable;
+
 namespace Monitorizare.Models;
 
 public class LogProcessor : ILogProcessor
 {
     private readonly ILogger _logger;
-    private readonly IAppSettings _settings;
 
-    public LogProcessor(IAppSettings settings)
-    {
-        _settings = settings;
+    public LogProcessor() =>
         _logger = LoggerFactory.CreateLogger();
-    }
 
-    public async Task<IEnumerable<TransportLog>> TryParseLoadingAsync(string filePath)
+    public async Task<ImmutableList<TransportType>> TryParseLogAsync(string filePath)
     {
-        return await TryParseLogAsync(filePath, line =>
+        return await TryParseLogAsync<TransportType>(filePath, line =>
         {
-            var parts = line.ProcessTimestamp();
-            return new Incarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>());
+            var parts = line.SplitIntoParts();
+            var fileName = Path.GetFileName(filePath);
+
+            return fileName switch
+            {
+                "Incarcare.log" => new Incarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>()),
+                "Descarcare.log" => new Descarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>(), parts[3].ConvertTo<int>(), parts[4].ConvertTo<int>()),
+                _ => throw new ArgumentException($"Invalid file name: {fileName ?? "<null>"}")
+            };
         });
     }
 
-    public async Task<IEnumerable<TransportLog>> TryParseUnloadingAsync(string filePath)
+    private async Task<ImmutableList<T>> TryParseLogAsync<T>(string filePath, Func<string, T> parser) where T : class
     {
-        return await TryParseLogAsync(filePath, line =>
-        {
-            var parts = line.ProcessTimestamp();
-            return new Descarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>(), parts[3].ConvertTo<int>(), parts[4].ConvertTo<int>());
-        });
-    }
-
-    private async Task<IEnumerable<TransportLog>> TryParseLogAsync(string filePath, Func<string, TransportLog> parser)
-    {
-        var records = new List<TransportLog>();
+        var records = new List<T>();
+        var fileName = Path.GetFileName(filePath);
 
         try
         {
@@ -42,13 +39,9 @@ public class LogProcessor : ILogProcessor
             {
                 var sanitizedLine = line.Sanitize();
                 if (sanitizedLine.PassesValidation())
-                {
                     records.Add(parser(sanitizedLine));
-                }
                 else
-                {
-                    await _logger.LogWarningAsync($"Error, while parsing {Path.GetFileName(filePath)} file, the `{sanitizedLine}` line didn't pass the validation and thus was ignored.");
-                }
+                    await _logger.LogWarningAsync($"Error, while parsing {fileName} file, the `{sanitizedLine}` line didn't pass the validation and thus was ignored.");
             }
         }
         catch (Exception ex)
@@ -56,6 +49,6 @@ public class LogProcessor : ILogProcessor
             await _logger.LogExceptionAsync(ex);
         }
 
-        return records;
+        return records.ToImmutableList();
     }
 }

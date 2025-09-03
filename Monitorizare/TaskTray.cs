@@ -4,10 +4,11 @@ namespace Monitorizare;
 
 public class TaskTray : ApplicationContext
 {
-    private CronTasks _cronTasks;
+    private readonly CronTasks _cronTasks;
     private readonly NotifyIcon _notifyIcon;
     private readonly CronDaemon _cronDaemon;
     private readonly IAppSettings _settings;
+    private readonly string DefaultCron = "0 */1 * * *"; // By default run once every hour
 
     public TaskTray()
     {
@@ -16,7 +17,7 @@ public class TaskTray : ApplicationContext
         _settings = new AppSettings();
 
         // Notification icon setup
-        _notifyIcon = new NotifyIcon
+        _notifyIcon = new()
         {
             ContextMenuStrip = CreateContextMenu(),
             Icon = Resources.Database,
@@ -29,7 +30,7 @@ public class TaskTray : ApplicationContext
         _ = DatabaseFactory.GetDatabase().ApplyMigrationsAsync();
 
         // Setup and start Crontab daemon
-        var schedule = GetSchedule();
+        var schedule = _settings.Configuration.GetSection("General:Schedule").Value ?? DefaultCron;
         _cronDaemon.Add(schedule, async () => await _cronTasks.SaveTransportLogs());
         _cronDaemon.Start();
     }
@@ -46,17 +47,22 @@ public class TaskTray : ApplicationContext
         new ToolStripMenuItem("Vizualizare", null, (s, e) => ShowForm<Vizualizare>()),
         new ToolStripMenuItem("Exportare", null, (s, e) => ShowForm<Exporta>()),
         new ToolStripSeparator(),
-        new ToolStripMenuItem("Mesaje", null, (s, e) => ShowForm<Logs>()),
-        new ToolStripSeparator(),
-# if DEBUG
-        new ToolStripMenuItem("Update logs", null, UpdateLogsAsync),
-        new ToolStripSeparator(),
+        new ToolStripMenuItem("Administrare")
+        {
+            DropDownItems =
+            {
+                new ToolStripMenuItem("Mesaje", null, (s, e) => ShowForm<Logs>()),
+                // new ToolStripMenuItem("Migratii", null, (s, e) => MessageBox.Show("Show migrations")), // To do!
+#if DEBUG // Debugging purposes only
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Update logs", null, UpdateLogsAsync), // Update logs on-demand
 # endif
+            }
+        },
+
+        new ToolStripSeparator(),
         new ToolStripMenuItem("Inchide", Resources.Door.ToBitmap(), (s, e) => ExitThread())
     };
-
-    private string GetSchedule() =>
-        _settings.Configuration.GetSection("General:Schedule").Value ?? "0 */1 * * *"; // Run once every hour by default
 
     protected override void Dispose(bool disposing)
     {
@@ -81,8 +87,8 @@ public class TaskTray : ApplicationContext
         }
     }
 
-# if DEBUG // Debugging purposes only
+#if DEBUG // Debugging purposes only
     public async void UpdateLogsAsync(object? sender, EventArgs e) =>
         await _cronTasks.SaveTransportLogs();
-# endif
+#endif
 }

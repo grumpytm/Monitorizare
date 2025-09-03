@@ -2,18 +2,27 @@ namespace Monitorizare.Data;
 
 public interface IDatabase
 {
-    public Task ApplyMigrationsAsync();
-    public Task LogInfoAsync(string message, string? details = null);
-    public Task LogWarningAsync(string message, string? details = null);
-    public Task LogErrorAsync(string message, string? details = null);
-    public Task LogExceptionAsync(Exception ex);
-    public Task<int> SaveRecordsAsync(IEnumerable<TransportLog> records);
-    public Task<IEnumerable<LogsDTO>> FetchLogsAsync();
-    public Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table);
-    public Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds);
-    public Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds);
-    public Task<IEnumerable<LastDatesDTO>> GetMaxDates();
-    public Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords();
-    public Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords();
-    public Task<IEnumerable<LongBoundsDTO>> GetTransportBounds();
+    // Migrations
+    Task ApplyMigrationsAsync();
+
+    // Logging
+    Task LogInfoAsync(string message, string? details = null);
+    Task LogWarningAsync(string message, string? details = null);
+    Task LogErrorAsync(string message, string? details = null);
+    Task LogExceptionAsync(Exception ex);
+
+    // Transport records
+    Task<int> SaveRecordsAsync(IEnumerable<TransportType> records);
+
+    // Logs queries
+    Task<IEnumerable<LogsDTO>> FetchLogsAsync();
+
+    // Transport queries
+    Task<IEnumerable<DateTimeBoundsDTO>> GetMinMaxFor(string table);
+    Task<IEnumerable<IncarcareDTO>> LoadIncarcareWithin(DateBounds bounds);
+    Task<IEnumerable<DescarcareDTO>> LoadDescarcareWithin(DateBounds bounds);
+    Task<IEnumerable<LastDatesDTO>> GetMaxDates();
+    Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords();
+    Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords();
+    Task<IEnumerable<LongBoundsDTO>> GetTransportBounds();
 }

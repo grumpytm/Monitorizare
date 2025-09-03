@@ -16,7 +16,7 @@ public static class CommonExtensions
     public static IEnumerable<T> GetVisibleControlsOfType<T>(this Control parent) where T : Control =>
         parent.Controls.OfType<T>().Where(c => c.Visible);
 
-    public static List<string> ExtractUniqueValuesFor<T>(this IEnumerable<T> content, Control comboBox) where T : class
+    public static IEnumerable<string> ExtractUniqueValuesFor<T>(this IEnumerable<T> content, Control comboBox) where T : class
     {
         var firstItem = new List<string> { "-" };
         var name = comboBox.Name.Replace("ComboBox", "");
@@ -29,7 +29,7 @@ public static class CommonExtensions
             .Distinct()
             .OrderBy(val => int.TryParse(val, out var num) ? num : int.MaxValue);
 
-        return firstItem.Concat(distinctItems).ToList();
+        return firstItem.Concat(distinctItems);
     }
 
     public static IEnumerable<string> ExtractDistinct<T>(this IEnumerable<T> content, string name)

@@ -74,24 +74,23 @@ public class TransportExportData
 
     private static async Task<Dictionary<string, object>> PrepareExportAsync(IncarcareSource incarcareSource, DescarcareSource descarcareSource)
     {
-        var incarcare = (await incarcareSource()).Select(x => new Dictionary<string, object>
-        {
-            ["Data"] = x.Date,
-            ["Ora"] = x.Time,
-            ["Siloz"] = x.Siloz,
-            ["Greutate"] = x.Greutate
-        });
+        var incarcare = (await incarcareSource()).Select(ToDictionary);
+        var descarcare = (await descarcareSource()).Select(ToDictionary);
 
-        var descarcare = (await descarcareSource()).Select(x => new Dictionary<string, object>
+        return new Dictionary<string, object>
         {
-            ["Data"] = x.Date,
-            ["Ora"] = x.Time,
-            ["Siloz"] = x.Siloz,
-            ["Greutate"] = x.Greutate,
-            ["Hala"] = x.Hala,
-            ["Buncar"] = x.Buncar,
-        });
-
-        return new Dictionary<string, object> { { "Incarcare", incarcare.ToList() }, { "Descarcare", descarcare.ToList() } };
+            { "Incarcare", incarcare.ToList() },
+            { "Descarcare", descarcare.ToList() }
+        };
     }
+
+    private static Dictionary<string, object?> ToDictionary<T>(T dto) =>
+        typeof(T).GetProperties()
+            .ToDictionary(prop => ColumnNames.TryGetValue(prop.Name, out var newName) ? newName : prop.Name, prop => prop.GetValue(dto));
+
+    private static readonly Dictionary<string, string> ColumnNames = new()
+    {
+        ["Time"] = "Ora",
+        ["Date"] = "Data"
+    };
 }

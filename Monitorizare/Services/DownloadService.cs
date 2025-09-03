@@ -13,21 +13,18 @@ class DownloadService
     {
         _settings = settings;
         _logger = LoggerFactory.CreateLogger();
-
-        AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-        {
-            Console.WriteLine($"{DateTime.UtcNow} [Unhandled exception] - {args.ExceptionObject}");
-        };
     }
 
     public async Task DownloadFilesAsync()
     {
-        var filesList = _settings.GetFileList();
-        
+        var filesList = _settings.FilesList;
         if (!filesList.Any())
-            await _logger.LogErrorAsync("Error, corrupted or missing file list in configuration file, nothing to download.");
+        {
+            await _logger.LogErrorAsync("Error, missing file list in the configuration file, nothing to download.");
+            return;
+        }
 
-        var settings = new FTPServerSettings(_settings);
+        var settings = FTPSettings.Create(_settings);
         var localPath = Directory.GetCurrentDirectory().CombineLocalPath(settings.LocalPath);
 
         try
@@ -40,13 +37,12 @@ class DownloadService
             };
 
             await client.Connect();
-            await client.SetWorkingDirectory(settings.ServerPath);
+            if (!await TrySetWorkingDirectory(client, settings.ServerPath)) return;
 
             foreach (var file in filesList)
-            {
-                var status = await client.DownloadFile(Path.Combine(localPath, file), file, FtpLocalExists.Overwrite, FtpVerify.Retry);
-                await LogStatus(file, status);
-            }
+                await DownloadFileOrLogError(client, localPath, file);
+
+            await client.Disconnect();
         }
         catch (Exception ex)
         {
@@ -58,11 +54,37 @@ class DownloadService
     {
         var message = status switch
         {
-            FtpStatus.Success => $"File {file} successfully downloaded.",
-            FtpStatus.Failed => $"Failed to download {file} file.",
+            FtpStatus.Success => $"File '{file}' was successfully downloaded.",
+            FtpStatus.Failed => $"Failed to download '{file}' file.",
             _ => $"Unknown status {status} for {file} file."
         };
 
         await _logger.LogInfoAsync(message);
+    }
+
+    private async Task DownloadFileOrLogError(AsyncFtpClient client, string localPath, string file)
+    {
+        if (await client.FileExists(file))
+        {
+            var filePath = Path.Combine(localPath, file);
+            var status = await client.DownloadFile(filePath, file, FtpLocalExists.Overwrite, FtpVerify.Retry);
+            await LogStatus(file, status);
+        }
+        else
+        {
+            await _logger.LogErrorAsync($"Error, '{file}' doesn't exist on the FTP Server, check the 'Server > Files' section in the 'Settings.json' file.");
+        }
+    }
+
+    private async Task<bool> TrySetWorkingDirectory(AsyncFtpClient client, string path)
+    {
+        if (string.IsNullOrEmpty(path) || !await client.DirectoryExists(path))
+        {
+            await _logger.LogErrorAsync($"Error, '{path}' path doesn't exist on the FTP Server. Check 'Server > Details' in 'Settings.json'.");
+            return false;
+        }
+
+        await client.SetWorkingDirectory(path);
+        return true;
     }
 }
