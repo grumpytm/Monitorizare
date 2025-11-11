@@ -9,33 +9,30 @@ public class DataGridViewContent
         _database = DatabaseFactory.GetDatabase();
     }
 
-    public async Task<IEnumerable<TransportContentDTO>> LoadData(UITabNames tab, DateBounds bounds)
+    public async Task<IEnumerable<TransportContentDTO>> LoadData(UITabNames tab, DateBounds bounds) => tab switch
     {
-        return tab switch
-        {
-            UITabNames.Incarcare => (await _database.LoadIncarcareWithin(bounds))
-                .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, 0, 0)),
-            UITabNames.Descarcare => (await _database.LoadDescarcareWithin(bounds))
-                .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, item.Hala, item.Buncar)),
-            _ => Enumerable.Empty<TransportContentDTO>()
-        };
-    }
+        UITabNames.Incarcare => (await _database.LoadIncarcareWithin(bounds))
+            .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, 0, 0)),
+        UITabNames.Descarcare => (await _database.LoadDescarcareWithin(bounds))
+            .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, item.Hala, item.Buncar)),
+        _ => Enumerable.Empty<TransportContentDTO>()
+    };
 
-    public async Task<IEnumerable<TransportContentDTO>> LoadLastData(UITabNames tab)
+    public async Task<IEnumerable<TransportContentDTO>> LoadLastData(UITabNames tab) => tab switch
     {
-        return tab switch
-        {
-            UITabNames.Incarcare => (await _database.LastIncarcareRecords())
-                .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, 0, 0)),
-            UITabNames.Descarcare => (await _database.LastDescarcareRecords())
-                .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, item.Hala, item.Buncar)),
-            _ => Enumerable.Empty<TransportContentDTO>()
-        };
-    }
+        UITabNames.Incarcare => (await _database.LastIncarcareRecords())
+            .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, 0, 0)),
+        UITabNames.Descarcare => (await _database.LastDescarcareRecords())
+            .Select((item, index) => new TransportContentDTO(index + 1, item.Date, item.Time, item.Siloz, item.Greutate, item.Hala, item.Buncar)),
+        _ => Enumerable.Empty<TransportContentDTO>()
+    };
 
     public async Task<DateTimeBoundsDTO> GetMinMaxFor(string tabName) =>
         (await _database.GetMinMaxFor(tabName)).First();
 
     public async Task<IEnumerable<LogsDTO>> LoadLogs() =>
         (await _database.FetchLogsAsync()).Select((item, index) => new LogsDTO(index + 1, item.Type, item.Date, item.Time, item.Message));
+
+    public async Task<IEnumerable<MigrationsDTO>> LoadMigrations() =>
+        (await _database.FetchMigrationsAsync()).Select((item, index) => new MigrationsDTO(index + 1, item.File, item.Date, item.Time));
 }

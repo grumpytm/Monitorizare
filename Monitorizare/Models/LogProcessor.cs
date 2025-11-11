@@ -9,46 +9,55 @@ public class LogProcessor : ILogProcessor
     public LogProcessor() =>
         _logger = LoggerFactory.CreateLogger();
 
+    private static readonly Dictionary<string, Func<string, TransportType>> Parsers = new()
+    {
+        // Filling records
+        ["Incarcare.log"] = static line =>
+            Parse(line, p => new Incarcare(p[0].ConvertTo<long>(), p[1].ConvertTo<int>(), p[2].ConvertTo<int>())),
+
+        // Emptying records
+        ["Descarcare.log"] = static line =>
+            Parse(line, p => new Descarcare(p[0].ConvertTo<long>(), p[1].ConvertTo<int>(), p[2].ConvertTo<int>(), p[3].ConvertTo<int>(), p[4].ConvertTo<int>())),
+    };
+
     public async Task<ImmutableList<TransportType>> TryParseLogAsync(string filePath)
     {
-        return await TryParseLogAsync<TransportType>(filePath, line =>
-        {
-            var parts = line.SplitIntoParts();
-            var fileName = Path.GetFileName(filePath);
-
-            return fileName switch
-            {
-                "Incarcare.log" => new Incarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>()),
-                "Descarcare.log" => new Descarcare(parts[0].ConvertTo<long>(), parts[1].ConvertTo<int>(), parts[2].ConvertTo<int>(), parts[3].ConvertTo<int>(), parts[4].ConvertTo<int>()),
-                _ => throw new ArgumentException($"Invalid file name: {fileName ?? "<null>"}")
-            };
-        });
-    }
-
-    private async Task<ImmutableList<T>> TryParseLogAsync<T>(string filePath, Func<string, T> parser) where T : class
-    {
-        var records = new List<T>();
         var fileName = Path.GetFileName(filePath);
 
-        try
-        {
-            using StreamReader reader = File.OpenText(filePath);
-            await reader.ReadLineAsync(); // skip header
+        if (!Parsers.TryGetValue(fileName, out var parser))
+            throw new ArgumentException($"Error, file name: {fileName ?? "<null>"} doesn't have a valid parser!");
 
-            while (await reader.ReadLineAsync() is { } line)
-            {
-                var sanitizedLine = line.Sanitize();
-                if (sanitizedLine.PassesValidation())
-                    records.Add(parser(sanitizedLine));
-                else
-                    await _logger.LogWarningAsync($"Error, while parsing {fileName} file, the `{sanitizedLine}` line didn't pass the validation and thus was ignored.");
-            }
-        }
-        catch (Exception ex)
+        var records = new List<TransportType>();
+
+        await foreach (var line in GetSanitizedLines(filePath, _logger))
         {
-            await _logger.LogExceptionAsync(ex);
+            records.Add(parser(line));
         }
 
         return records.ToImmutableList();
     }
+
+    private static async IAsyncEnumerable<string> GetSanitizedLines(string filePath, ILogger logger)
+    {
+        var fileName = Path.GetFileName(filePath);
+        using var reader = File.OpenText(filePath);
+
+        await reader.ReadLineAsync(); // skip header
+
+        while (await reader.ReadLineAsync() is { } line)
+        {
+            var sanitizedLine = line.Sanitize();
+
+            if (!sanitizedLine.MatchesPattern())
+            {
+                await logger.LogWarningAsync($"Error while parsing {fileName}: line `{sanitizedLine}` didn't pass validation and thus was dismissed.");
+                continue;
+            }
+
+            yield return sanitizedLine;
+        }
+    }
+
+    private static TransportType Parse(string line, Func<List<string>, TransportType> map) =>
+        map(line.SplitIntoParts());
 }

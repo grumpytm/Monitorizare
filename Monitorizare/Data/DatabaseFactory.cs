@@ -9,8 +9,9 @@ public class DatabaseFactory
         var transportRecordSaver = new TransportRecordSaver();
         var queryTransport = new QueryTransport();
         var databaseMigrations = new DatabaseMigrations(logger);
+        var queryMigrations = new QueryMigrations();
 
-        return new SQLiteDatabase(logger, databaseMigrations, queryLogs, transportRecordSaver, queryTransport);
+        return new SQLiteDatabase(logger, databaseMigrations, queryLogs, transportRecordSaver, queryTransport, queryMigrations);
     });
 
     public static SQLiteDatabase GetDatabase() => _instance.Value;

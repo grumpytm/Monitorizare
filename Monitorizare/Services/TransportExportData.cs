@@ -72,17 +72,11 @@ public class TransportExportData
         );
     }
 
-    private static async Task<Dictionary<string, object>> PrepareExportAsync(IncarcareSource incarcareSource, DescarcareSource descarcareSource)
+    private static async Task<Dictionary<string, object>> PrepareExportAsync(IncarcareSource incarcareSource, DescarcareSource descarcareSource) => new()
     {
-        var incarcare = (await incarcareSource()).Select(ToDictionary);
-        var descarcare = (await descarcareSource()).Select(ToDictionary);
-
-        return new Dictionary<string, object>
-        {
-            { "Incarcare", incarcare.ToList() },
-            { "Descarcare", descarcare.ToList() }
-        };
-    }
+        { "Incarcare", (await incarcareSource()).Select(ToDictionary).ToList() },
+        { "Descarcare", (await descarcareSource()).Select(ToDictionary).ToList() }
+    };
 
     private static Dictionary<string, object?> ToDictionary<T>(T dto) =>
         typeof(T).GetProperties()

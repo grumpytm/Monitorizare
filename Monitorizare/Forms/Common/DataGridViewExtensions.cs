@@ -6,7 +6,7 @@ public static class DataGridViewExtensions
     {
         foreach (DataGridViewRow row in dataGridView.Rows)
         {
-            if (!TryParseValue(row.Cells["Siloz"]).IsWithin(1, 6)) // Incorrect silo number?
+            if (!TryParseValue(row.Cells["Siloz"]).IsWithinBounds(1, 6)) // Incorrect silo number?
                 HighlightCell(row.Cells["Siloz"], DataGridViewRowStyle.Color.Error);
 
             else if (TryParseValue(row.Cells["Greutate"]).IsLessThan(100)) // Weight might be off?
@@ -23,14 +23,12 @@ public static class DataGridViewExtensions
         cell.OwningRow.DefaultCellStyle.BackColor = backgroundColor;
     }
 
-    public static void RemoveColumns(this DataGridView datagridview, string[] collection)
-    {
-        foreach (var name in collection)
+    public static void RemoveColumns(this DataGridView datagridview, List<string> columnList) =>
+        columnList.ForEach(column =>
         {
-            if (datagridview.Columns.Contains(name))
-                datagridview.Columns.Remove(name);
-        }
-    }
+            if (datagridview.Columns.Contains(column))
+                datagridview.Columns.Remove(column);
+        });
 
     public static void ChangeSizeBasedOn(this DataGridView dataGridView, UITabNames tab) =>
         dataGridView.Size = UILayoutSizes.DataGridViewSizes.GetValueOrDefault(tab, dataGridView.Size);

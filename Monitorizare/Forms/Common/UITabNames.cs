@@ -1,4 +1,4 @@
-namespace Monitorizare.Common;
+namespace Monitorizare.Forms.Common;
 
 public enum UITabNames
 {

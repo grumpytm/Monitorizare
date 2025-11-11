@@ -10,6 +10,7 @@ namespace Monitorizare
         private readonly Dictionary<DataGridView, DataGridViewSorting> _sortHelpers = new();
         private readonly DataGridViewContent _dataGridViewContent = new();
         private readonly TransportExportData _transportExport = new();
+        private ILogger Logger { get; } = DatabaseFactory.GetDatabase().Logger;
 
         public Exporta()
         {
@@ -23,25 +24,47 @@ namespace Monitorizare
             {
                 DataGridViewIncarcare.BeginInvoke(() => DataGridViewIncarcare.ClearSelection());
                 DataGridViewIncarcare.HighlightRowsWithIssues();
-                DataGridViewIncarcare.RemoveColumns(new[] { "Hala", "Buncar" });
+                DataGridViewIncarcare.RemoveColumns(new List<string> { "Hala", "Buncar" });
+                DataGridViewIncarcare.Columns[2].DefaultCellStyle.Format = "HH:mm";
             };
 
             DataGridViewDescarcare.DataBindingComplete += (sender, args) =>
             {
                 DataGridViewDescarcare.BeginInvoke(() => DataGridViewDescarcare.ClearSelection());
-                DataGridViewIncarcare.HighlightRowsWithIssues();
+                DataGridViewDescarcare.HighlightRowsWithIssues();
+                DataGridViewDescarcare.Columns[2].DefaultCellStyle.Format = "HH:mm";
             };
         }
 
         private void Exporta_FormShown(object? sender, EventArgs e)
         {
-            _ = SetDateTimeLimits();
-            _ = LoadDataAsync();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SetDateTimeBounds();
+                    await LoadDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    await Logger.LogExceptionAsync(ex);
+                }
+            });
 
             PopulateExporType();
             ComboBoxExportType.SelectedIndexChanged += ComboBox_SelectedIndexChanged;
-            DataGridViewIncarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
-            DataGridViewDescarcare.SetSelectionBackColor(Color.FromArgb(150, 180, 226, 244));
+
+            var selectionBackGround = Color.FromArgb(150, 180, 226, 244);
+
+            DataGridViewIncarcare.Invoke(() =>
+            {
+                DataGridViewIncarcare.SetSelectionBackColor(selectionBackGround);
+            });
+
+            DataGridViewDescarcare.Invoke(() =>
+            {
+                DataGridViewDescarcare.SetSelectionBackColor(selectionBackGround);
+            });
         }
 
         private void Exporta_FormClosing(object? sender, FormClosingEventArgs e)
@@ -86,7 +109,7 @@ namespace Monitorizare
                 item.Visible = comboBox?.SelectedIndex == 2;
         }
 
-        private async Task SetDateTimeLimits()
+        private async Task SetDateTimeBounds()
         {
             var bounds = await _database.GetTransportBounds();
             SetPickerRange(new[] { DateTimePickerLoadingBefore, DateTimePickerLoadingAfter }, bounds.First(x => x.Type == "Incarcare"));
@@ -103,11 +126,17 @@ namespace Monitorizare
 
         private async Task LoadDataAsync()
         {
-            DataGridViewIncarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Incarcare)).ToList();
-            DataGridViewAdjustColumns(DataGridViewIncarcare);
+            await DataGridViewIncarcare.Invoke(async () =>
+            {
+                DataGridViewIncarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Incarcare)).ToList();
+                DataGridViewAdjustColumns(DataGridViewIncarcare);
+            });
 
-            DataGridViewDescarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Descarcare)).ToList();
-            DataGridViewAdjustColumns(DataGridViewDescarcare);
+            await DataGridViewDescarcare.Invoke(async () =>
+            {
+                DataGridViewDescarcare.DataSource = (await _dataGridViewContent.LoadLastData(UITabNames.Descarcare)).ToList();
+                DataGridViewAdjustColumns(DataGridViewDescarcare);
+            });
         }
 
         private static void DataGridViewAdjustColumns(DataGridView dataGrid)

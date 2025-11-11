@@ -14,6 +14,7 @@ public class TransportRecordSaver
 
     public async Task<int> SaveRecordsAsync<T>(IEnumerable<T> records) where T : class
     {
+
         if (!records.Any()) return 0;
 
         int affectedRows = 0;
@@ -21,11 +22,11 @@ public class TransportRecordSaver
         await connection.EnsureOpenAsync();
 
         using var transaction = await connection.BeginTransactionAsync();
+
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
 
-        var first = records.First();
-        var (table, columns) = first.GetTableAndColumns();
+        var (table, columns) = records.First().GetTableAndColumns();
         var values = string.Join(", ", columns.Select(c => $"@{c}"));
         var uniqueKey = columns.First();
 
@@ -35,7 +36,7 @@ public class TransportRecordSaver
 
         try
         {
-            foreach (var record in records)
+            foreach (var record in records.Distinct())
                 affectedRows += await InsertRecordAsync(command, record);
 
             await transaction.CommitAsync();

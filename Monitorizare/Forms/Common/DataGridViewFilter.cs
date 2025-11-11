@@ -1,25 +1,56 @@
-using ComponentFactory.Krypton.Toolkit;
+using System.Reflection;
 
 namespace Monitorizare.Forms.Common;
 
 public static class DataGridViewFilter
 {
-    public static IEnumerable<TransportContentDTO> FilterBy(this IEnumerable<TransportContentDTO> content, IEnumerable<KryptonComboBox> comboBoxes)
+    public static IEnumerable<(string, int)> CreateFilterList<T>(this IEnumerable<T> items, Func<T, string> getName, Func<T, object?> getValue)
     {
-        var predicates = new List<Func<TransportContentDTO, bool>>();
-        foreach (var comboBox in comboBoxes)
+        foreach (var item in items)
         {
-            var propName = comboBox.Name.Replace("ComboBox", string.Empty);
-            if (!int.TryParse(comboBox.SelectedValue?.ToString(), out int parsedValue)) continue;
-            predicates.Add(item => item.GetType().GetProperty(propName)?.GetValue(item) is int value && value == parsedValue);
+            var name = getName(item).Replace("ComboBox", string.Empty);
+            if (!int.TryParse(getValue(item)?.ToString(), out int expected)) continue;
+            yield return (name, expected);
         }
-
-        return content.Where(item => predicates.All(predicate => predicate(item)));
     }
 
-    public static IEnumerable<LogsDTO> FilterBy(this IEnumerable<LogsDTO> content, KryptonComboBox comboBox)
+    public static IEnumerable<T> FilterByList<T>(this IEnumerable<T> source, IEnumerable<(string, int)> filters)
     {
-        var parsedType = comboBox.SelectedValue?.ToString() ?? string.Empty;
-        return Enum.GetNames(typeof(LogType)).Contains(parsedType) ? content.Where(item => item.Type == parsedType) : content;
+        var predicates = new List<Func<T, bool>>();
+
+        foreach (var (propName, expected) in filters)
+        {
+            var prop = typeof(T).GetProperty(propName);
+            if (prop == null) continue;
+
+            predicates.Add(x => prop.GetValue(x) is int value && Equals(value, expected));
+        }
+
+        return source.Where(x => predicates.All(predicate => predicate(x)));
+    }
+
+    public static IEnumerable<LogsDTO> FilterByType(this IEnumerable<LogsDTO> source, string expected) =>
+        source.FilterByOrDefault(x => Equals(x.Type, expected));
+
+    private static IEnumerable<T> FilterByOrDefault<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+    {
+        var filtered = source.Where(predicate);
+        return filtered.Any() ? filtered : source;
+    }
+
+    public static IEnumerable<T> ReindexByColumn<T>(this IEnumerable<T> source, string column)
+    {
+        var prop = typeof(T).GetProperty(column);
+        return prop is null ? source : source.ReindexUsing(prop);
+    }
+
+    private static IEnumerable<T> ReindexUsing<T>(this IEnumerable<T> source, PropertyInfo prop)
+    {
+        int index = 1;
+        foreach (var item in source)
+        {
+            prop.SetValue(item, index++);
+            yield return item;
+        }
     }
 }

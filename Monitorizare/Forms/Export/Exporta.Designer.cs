@@ -91,6 +91,7 @@
             DataGridViewIncarcare.AllowUserToDeleteRows = false;
             DataGridViewIncarcare.AllowUserToResizeColumns = false;
             DataGridViewIncarcare.AllowUserToResizeRows = false;
+            DataGridViewIncarcare.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             DataGridViewIncarcare.ColumnHeadersHeight = 30;
             DataGridViewIncarcare.GridStyles.Style = ComponentFactory.Krypton.Toolkit.DataGridViewStyle.Mixed;
             DataGridViewIncarcare.GridStyles.StyleColumn = ComponentFactory.Krypton.Toolkit.GridStyle.Sheet;
@@ -160,6 +161,7 @@
             DataGridViewDescarcare.AllowUserToDeleteRows = false;
             DataGridViewDescarcare.AllowUserToResizeColumns = false;
             DataGridViewDescarcare.AllowUserToResizeRows = false;
+            DataGridViewDescarcare.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             DataGridViewDescarcare.ColumnHeadersHeight = 30;
             DataGridViewDescarcare.GridStyles.Style = ComponentFactory.Krypton.Toolkit.DataGridViewStyle.Mixed;
             DataGridViewDescarcare.GridStyles.StyleColumn = ComponentFactory.Krypton.Toolkit.GridStyle.Sheet;
@@ -347,7 +349,6 @@
             Name = "Exporta";
             Padding = new Padding(23, 69, 23, 23);
             Resizable = false;
-            ShadowType = MetroFormShadowType.Flat;
             Text = "Exportare date";
             ((System.ComponentModel.ISupportInitialize)ComboBoxExportType).EndInit();
             PerioadaGroupBox.ResumeLayout(false);

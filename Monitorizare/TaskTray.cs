@@ -1,19 +1,15 @@
-﻿using Cron;
-
-namespace Monitorizare;
+﻿namespace Monitorizare;
 
 public class TaskTray : ApplicationContext
 {
-    private readonly CronTasks _cronTasks;
     private readonly NotifyIcon _notifyIcon;
-    private readonly CronDaemon _cronDaemon;
+    private readonly Cron.CronDaemon _cronDaemon;
     private readonly IAppSettings _settings;
     private readonly string DefaultCron = "0 */1 * * *"; // By default run once every hour
 
     public TaskTray()
     {
-        _cronTasks = new CronTasks();
-        _cronDaemon = new CronDaemon();
+        _cronDaemon = new();
         _settings = new AppSettings();
 
         // Notification icon setup
@@ -31,7 +27,7 @@ public class TaskTray : ApplicationContext
 
         // Setup and start Crontab daemon
         var schedule = _settings.Configuration.GetSection("General:Schedule").Value ?? DefaultCron;
-        _cronDaemon.Add(schedule, async () => await _cronTasks.SaveTransportLogs());
+        _cronDaemon.Add(schedule, async () => await CronTasks.SaveTransportLogs());
         _cronDaemon.Start();
     }
 
@@ -47,16 +43,14 @@ public class TaskTray : ApplicationContext
         new ToolStripMenuItem("Vizualizare", null, (s, e) => ShowForm<Vizualizare>()),
         new ToolStripMenuItem("Exportare", null, (s, e) => ShowForm<Exporta>()),
         new ToolStripSeparator(),
-        new ToolStripMenuItem("Administrare")
+        new ToolStripMenuItem("Mentenanta")
         {
             DropDownItems =
             {
                 new ToolStripMenuItem("Mesaje", null, (s, e) => ShowForm<Logs>()),
-                // new ToolStripMenuItem("Migratii", null, (s, e) => MessageBox.Show("Show migrations")), // To do!
-#if DEBUG // Debugging purposes only
+                new ToolStripMenuItem("Migratii", null, (s, e) => ShowForm<Migrations>()),
                 new ToolStripSeparator(),
-                new ToolStripMenuItem("Update logs", null, UpdateLogsAsync), // Update logs on-demand
-# endif
+                new ToolStripMenuItem("Descarca", null, UpdateLogsAsync), // Update logs on-demand
             }
         },
 
@@ -73,22 +67,14 @@ public class TaskTray : ApplicationContext
     // Generic function to create a new form or bring it to front
     private static void ShowForm<T>() where T : Form, new()
     {
-        var existingForm = Application.OpenForms[typeof(T).Name];
-        if (existingForm is null)
-        {
-            var form = new T { Icon = Resources.Database };
-            form.Show();
-            form.Activate();
-        }
-        else
-        {
-            existingForm.Activate();
-            existingForm.BringToFront();
-        }
+        if (Application.OpenForms[typeof(T).Name] is not Form form)
+            form = new T { Icon = Resources.Database };
+
+        form.Show();
+        form.Activate();
+        form.BringToFront();
     }
 
-#if DEBUG // Debugging purposes only
     public async void UpdateLogsAsync(object? sender, EventArgs e) =>
-        await _cronTasks.SaveTransportLogs();
-#endif
+        await CronTasks.SaveTransportLogs();
 }

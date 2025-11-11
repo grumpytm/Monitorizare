@@ -1,48 +1,121 @@
 using System.Data;
+using System.Data.Common;
+using System.Reflection;
 
 namespace Monitorizare.Common;
 
 public static class CommonExtensions
 {
+    // Miscellaneous
+
     public static bool NotEmpty(this string? value) =>
         !string.IsNullOrEmpty(value);
 
     public static bool IsLessThan(this int value, int expected) =>
         value < expected;
 
-    public static bool IsWithin(this int value, int min, int max) =>
+    public static bool IsWithinBounds(this int value, int min, int max) =>
         value >= min && value <= max;
 
-    public static IEnumerable<T> GetVisibleControlsOfType<T>(this Control parent) where T : Control =>
-        parent.Controls.OfType<T>().Where(c => c.Visible);
+    public static string? GetValueOrEmpty(this IDictionary<string, string?> dict, string key) =>
+        dict.TryGetValue(key, out var value) && value.NotEmpty() ? value : string.Empty;
 
-    public static IEnumerable<string> ExtractUniqueValuesFor<T>(this IEnumerable<T> content, Control comboBox) where T : class
-    {
-        var firstItem = new List<string> { "-" };
-        var name = comboBox.Name.Replace("ComboBox", "");
-        var prop = typeof(T).GetProperty(name);
-        if (prop == null) return firstItem;
+    // Date/Time specific
 
-        var distinctItems = content
-            .Select(row => prop.GetValue(row)?.ToString() ?? string.Empty)
-            .Where(NotEmpty)
-            .Distinct()
-            .OrderBy(val => int.TryParse(val, out var num) ? num : int.MaxValue);
+    public static long ToUnixTime(this DateTime date) =>
+        new DateTimeOffset(date).ToUnixTimeSeconds();
 
-        return firstItem.Concat(distinctItems);
-    }
+    public static string ToStrftime<T>(this T value) =>
+        $"strftime('%Y-%m-%d', datetime({value}, 'unixepoch', 'localtime'))";
 
-    public static IEnumerable<string> ExtractDistinct<T>(this IEnumerable<T> content, string name)
-    {
-        var prop = typeof(T).GetProperty(name) ?? throw new ArgumentException($"Property '{name}' not found on type {typeof(T).Name}");
-        return content.Select(x => prop.GetValue(x)?.ToString() ?? string.Empty)
-            .Where(NotEmpty)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-    }
+    public static (DateOnly, TimeOnly) ExtractDateAndTime(this long timestamp) =>
+        timestamp.ExtractDateTime().ExtractDateAndTime();
+
+    public static (DateOnly, TimeOnly) ExtractDateAndTime(this DateTime dateTime) =>
+        (DateOnly.FromDateTime(dateTime), TimeOnly.FromDateTime(dateTime));
+
+    public static DateTime ExtractDateTime(this long timestamp) =>
+        DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime.ToLocalTime();
+
+    public static DateOnly ExtractDateOnly(this long timestamp) =>
+        DateOnly.FromDateTime(timestamp.ExtractDateTime());
 
     public static (DateTime, DateTime) GetDayBounds(this DateTime date) =>
         (date.Date, date.Date.AddDays(1).AddTicks(-1)); // StartOfDay & EndOfDay
 
     public static (long, long) ToUnixTime(this (DateTime, DateTime) bounds) =>
         (bounds.Item1.ToUnixTime(), bounds.Item2.ToUnixTime());
+
+    // Reflection specific
+
+    public static T ConvertTo<T>(this object obj) =>
+        (T)Convert.ChangeType(obj, typeof(T));
+
+    public static (string, IEnumerable<string>) GetTableAndColumns<T>(this T record) where T : class =>
+        (record.GetType().Name.ToLower(), record.GetProperty(p => p.Name));
+
+    public static IReadOnlyDictionary<string, object> ExtractParameters<T>(this T record) where T : class =>
+        record.GetProperty(p => new KeyValuePair<string, object>($"@{p.Name}", p.GetValue(record) ?? DBNull.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+    public static IEnumerable<string> GetProperty<T>(this T record, Func<PropertyInfo, string> property) where T : class =>
+        record.GetType().GetProperties().Select(property);
+
+    public static IEnumerable<KeyValuePair<string, object>> GetProperty<T>(this T record, Func<PropertyInfo, KeyValuePair<string, object>> property) where T : class =>
+        record.GetType().GetProperties().Select(property);
+
+    public static IEnumerable<T> GetVisibleControlsOfType<T>(this Control parent) where T : Control =>
+            parent.Controls.OfType<T>().Where(c => c.Visible);
+
+    public static IEnumerable<string> GetDistinctOrderedPropertyValues<T>(this IEnumerable<T> content, string propName)
+    {
+        var prop = typeof(T).GetProperty(propName);
+
+        return prop == null
+        ? Enumerable.Empty<string>()
+        : content
+            .Select(x => prop.GetValue(x)?.ToString() ?? string.Empty)
+            .Where(NotEmpty)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => int.TryParse(x, out var value) ? value : int.MaxValue);
+    }
+
+    // Database specific
+
+    public static async Task<IEnumerable<string>> GetExistingTablesAsync(this DbConnection connection)
+    {
+        return (await connection.GetSchemaAsync("Tables"))
+            .AsEnumerable()
+            .Select(x => x[2]?.ToString() ?? string.Empty)
+            .Where(table => table.NotEmpty());
+    }
+
+    public static void AddParameter(this IDbCommand command, string name, object value)
+    {
+        var param = command.CreateParameter();
+        param.ParameterName = name;
+        param.Value = value ?? DBNull.Value;
+        command.Parameters.Add(param);
+    }
+
+    public static void AddParameters(this DbCommand command, IReadOnlyDictionary<string, object> parameters)
+    {
+        foreach (var (name, value) in parameters)
+            command.AddParameter(name, value);
+    }
+
+    public static async Task EnsureOpenAsync(this DbConnection connection)
+    {
+        if (connection.State != ConnectionState.Open)
+            await connection.OpenAsync();
+    }
+
+    public static T GetValueOrDefault<T>(this IDataRecord reader, string column, Func<object, T>? converter = null, T defaultValue = default!)
+    {
+        var value = reader[column];
+        if (value == DBNull.Value || value is null)
+            return defaultValue;
+
+        return converter == null ? value.ConvertTo<T>() : converter(value);
+    }
 }

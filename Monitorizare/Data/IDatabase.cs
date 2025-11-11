@@ -25,4 +25,7 @@ public interface IDatabase
     Task<IEnumerable<IncarcareDTO>> LastIncarcareRecords();
     Task<IEnumerable<DescarcareDTO>> LastDescarcareRecords();
     Task<IEnumerable<LongBoundsDTO>> GetTransportBounds();
+
+    // Migrations queries
+    Task<IEnumerable<MigrationsDTO>> FetchMigrationsAsync();
 }

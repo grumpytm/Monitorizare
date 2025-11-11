@@ -13,17 +13,28 @@ public partial class Vizualizare : MetroForm
     private bool IsDescarcareTab => CurrentTab == UITabNames.Descarcare;
     private readonly Dictionary<DataGridView, DataGridViewSorting> _sortHelpers = new();
     private readonly DataGridViewContent _dataGridViewContent = new();
+    private ILogger Logger { get; } = DatabaseFactory.GetDatabase().Logger;
 
     public Vizualizare()
     {
         InitializeComponent();
 
-        CurrentTab = 0;
+        CurrentTab = UITabNames.Incarcare;
         Shown += (sender, args) => Vizualizare_FormShown(sender, args);
         FormClosing += (sender, args) => Vizualizare_FormClosing(sender, args);
 
-        _ = LoadLastDataAsync();
-        _ = SetDateTimeBounds();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LoadLastDataAsync();
+                await SetDateTimeBounds();
+            }
+            catch (Exception ex)
+            {
+                await Logger.LogExceptionAsync(ex);
+            }
+        });
 
         DataGridView.DataBindingComplete += (sender, args) =>
         {
@@ -31,7 +42,9 @@ public partial class Vizualizare : MetroForm
             DataGridView.HighlightRowsWithIssues();
 
             if (IsIncarcareTab)
-                DataGridView.RemoveColumns(new[] { "Hala", "Buncar" });
+                DataGridView.RemoveColumns(new List<string> { "Hala", "Buncar" });
+
+            DataGridView.Columns[2].DefaultCellStyle.Format = "HH:mm"; // Apply default time format
         };
     }
 
@@ -61,13 +74,19 @@ public partial class Vizualizare : MetroForm
 
     private async void TabControl_SelectedIndexchanged(object sender, EventArgs e)
     {
-        CurrentTab = (UITabNames)TabControl.SelectedIndex;
+        SetCurrentTab(TabControl.SelectedIndex);
 
         await LoadLastDataAsync();
         await SetDateTimeBounds();
+        
         PopulateComboBoxes();
         DataGridView.ResetHeaderCellStyle();
     }
+
+    private void SetCurrentTab(int value) =>
+        CurrentTab = Enum.IsDefined(typeof(UITabNames), value)
+        ? (UITabNames)value
+        : 0;
 
     private async void RefreshButton_Click(object sender, EventArgs e)
     {
@@ -85,9 +104,12 @@ public partial class Vizualizare : MetroForm
 
         foreach (var picker in new[] { DateTimePickerMin, DateTimePickerMax })
         {
-            picker.MinDate = min;
-            picker.MaxDate = max;
-            picker.Value = max;
+            picker.Invoke(() =>
+            {
+                picker.MinDate = min;
+                picker.MaxDate = max;
+                picker.Value = max;
+            });
         }
     }
 
@@ -118,7 +140,8 @@ public partial class Vizualizare : MetroForm
 
     private void PopulateDataGridView()
     {
-        DataGridView.DataSource = _content.ToList();
+        DataGridView.Invoke(() => DataGridView.DataSource = _content.ToList());
+
         DataGridViewCleanup();
         LockControls();
     }
@@ -133,36 +156,46 @@ public partial class Vizualizare : MetroForm
 
     private void LockControls()
     {
+        var count = _content.Any();
         foreach (var control in new Control[] { ComboBoxSiloz, ComboBoxHala, ComboBoxBuncar, DateTimePickerMin, DateTimePickerMax, RefreshButton })
-            control.Enabled = _content.Any();
+            control.Invoke(() => control.Enabled = count);
     }
 
     private void ApplyCustomStyle()
     {
-        DataGridView.RenameHeaders(new[] { "#", "Data", "Ora" });
-        DataGridView.SetColumnsWidth(new[] { 50, 80, 65, 65, 65, 65, 65 });
+        DataGridView.Invoke(() =>
+        {
+            DataGridView.RenameHeaders(new[] { "#", "Data", "Ora" });
+            DataGridView.SetColumnsWidth(new[] { 50, 80, 65, 65, 65, 65, 65 });
+        });
     }
 
     private void ResizeCurrentTabControls()
     {
-        FiltrareGroupBox.ChangeSizeBasedOn(CurrentTab);
-        DataGridView.ChangeSizeBasedOn(CurrentTab);
+        FiltrareGroupBox.Invoke(() => FiltrareGroupBox.ChangeSizeBasedOn(CurrentTab));
+        DataGridView.Invoke(() => DataGridView.ChangeSizeBasedOn(CurrentTab));
     }
 
     private void HideUnusedElements()
     {
         foreach (var control in new Control[] { LabelHala, LabelBuncar, ComboBoxHala, ComboBoxBuncar })
-            control.Visible = IsDescarcareTab;
+            control.Invoke(() => control.Visible = IsDescarcareTab);
     }
 
     private void PopulateComboBoxes()
     {
         var comboBoxList = FiltrareGroupBox.GetVisibleControlsOfType<KryptonComboBox>();
+
         foreach (var comboBox in comboBoxList)
         {
+            var propName = comboBox.Name.Replace("ComboBox", "");
+
+            var availableList = new List<string> { "-" };
+            availableList.AddRange(_content.GetDistinctOrderedPropertyValues(propName));
+
             comboBox.SelectedIndexChanged -= ComboBox_SelectedIndexChanged;
-            var distinctItems = _content.ExtractUniqueValuesFor(comboBox);
-            comboBox.DataSource = new BindingList<string>(distinctItems.ToList());
+            comboBox.DataSource = new BindingList<string>(availableList);
+            comboBox.SelectedIndex = 0;
             comboBox.SelectedIndexChanged += ComboBox_SelectedIndexChanged;
             comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         }
@@ -173,9 +206,10 @@ public partial class Vizualizare : MetroForm
         if (string.IsNullOrEmpty(CurrentTabName)) return;
         if (sender is not KryptonComboBox || !_content.Any()) return;
 
-        var comboBoxList = FiltrareGroupBox.GetVisibleControlsOfType<KryptonComboBox>();
-        DataGridView.DataSource = _content.FilterBy(comboBoxList).ToList();
+        var availableList = FiltrareGroupBox.GetVisibleControlsOfType<KryptonComboBox>();
+        var comboBoxList = availableList.CreateFilterList(x => x.Name, x => x.SelectedValue);
 
+        DataGridView.DataSource = _content.FilterByList(comboBoxList).ReindexByColumn("Id").ToList();
         DataGridView.ResetHeaderCellStyle();
         ShowFilterDetails();
     }
@@ -185,7 +219,10 @@ public partial class Vizualizare : MetroForm
         var (count, total) = (DataGridView.RowCount, _content.Count());
         string plural = total == 1 ? "" : "e";
 
-        FilterDetails.Visible = true;
-        FilterDetails.Text = $"{count} din {total} rezultat{plural} afisate.";
+        FilterDetails.Invoke(() =>
+        {
+            FilterDetails.Visible = true;
+            FilterDetails.Text = $"{count} din {total} rezultat{plural} afisate.";
+        });
     }
 }

@@ -1,15 +1,17 @@
 ﻿namespace Monitorizare;
 
-public class CronTasks
+public static class CronTasks
 {
-    public async Task SaveTransportLogs()
+    public static async Task SaveTransportLogs()
     {
         var settings = new AppSettings();
         var logProcessor = new LogProcessor();
 
         // Download files
+# if !DEBUG
         var downloadService = new DownloadService(settings);
         await downloadService.DownloadFilesAsync();
+# endif
 
         // Process and save logs to database
         var transportService = new TransportService(settings, logProcessor);

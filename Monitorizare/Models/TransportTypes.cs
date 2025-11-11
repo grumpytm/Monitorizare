@@ -1,5 +1,5 @@
 namespace Monitorizare.Models;
 
 public abstract record TransportType;
-public record Incarcare(double Data, int Siloz, int Greutate) : TransportType;
-public record Descarcare(double Data, int Siloz, int Greutate, int Hala, int Buncar) : TransportType;
+public sealed record Incarcare(long Timestamp, int Siloz, int Greutate) : TransportType;
+public sealed record Descarcare(long Timestamp, int Siloz, int Greutate, int Hala, int Buncar) : TransportType;

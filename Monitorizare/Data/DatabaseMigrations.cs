@@ -27,8 +27,8 @@ public class DatabaseMigrations
                 successfulMigrations.Add(fileName);
         }
 
-        await _logger.LogMultipleAsync(MigrationMessages);
         await RecordMigrationsAsync(successfulMigrations);
+        await _logger.LogMultipleAsync(MigrationMessages);
     }
 
     private async Task<string> FetchLastMigration()
@@ -59,9 +59,13 @@ public class DatabaseMigrations
         try
         {
             var sqlContent = await File.ReadAllTextAsync(filePath);
-            var statements = Regex.Split(sqlContent, @"(?<=;)\s*(?=\n|$)")
+            var statements = Regex.Replace(sqlContent, @"--.*?$", string.Empty, RegexOptions.Multiline)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => x.Trim())
-                .Where(x => x.NotEmpty() && !x.StartsWith("--"));
+                .Where(x => x.NotEmpty());
+
+            var pattern = @"(?i)^CREATE\s+TABLE\s+[`""]?(?<name>\w+)[`""]?";
+            var match = new Regex(pattern);
 
             using var connection = CreateConnection();
             await connection.EnsureOpenAsync();
@@ -70,9 +74,6 @@ public class DatabaseMigrations
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            var pattern = @"(?i)^CREATE\s+TABLE\s+[`""]?(?<name>\w+)[`""]?";
-            var match = new Regex(pattern);
-
             foreach (var statement in statements)
             {
                 if (match.IsMatch(statement))
@@ -80,7 +81,7 @@ public class DatabaseMigrations
                     var tableName = Regex.Match(statement, pattern).Groups["name"].Value;
                     if (ExistingTables.Contains(tableName, StringComparer.OrdinalIgnoreCase))
                     {
-                        MigrationMessages.Add(new LogEntry(LogType.Warning, $"Skipped creation of table `{tableName}` from `{file}` migration file cos it already exists."));
+                        MigrationMessages.Add(LogEntry.Create(LogTypes.Warning, $"Skipped creation of table `{tableName}` from `{file}` migration file cos it already exists."));
                         continue;
                     }
                 }
@@ -94,7 +95,7 @@ public class DatabaseMigrations
         }
         catch (Exception ex)
         {
-            MigrationMessages.Add(new LogEntry(LogType.Exception, ex.Message, ex.StackTrace));
+            MigrationMessages.Add(LogEntry.Create(LogTypes.Exception, ex.Message, ex.StackTrace));
             return (file, false);
         }
     }
@@ -113,10 +114,12 @@ public class DatabaseMigrations
         try
         {
             var entryList = new List<LogEntry>();
-            command.CommandText = "INSERT INTO migrations (file, date) VALUES (@file, @date)";
+            command.CommandText = "INSERT INTO migrations (file, timestamp) VALUES (@file, @timestamp)";
+
             command.Prepare();
 
-            var now = DateTime.UtcNow.ToUnixTime();
+            var frozenTime = DateTime.UtcNow.ToUnixTime();
+
             foreach (var fileName in migrations)
             {
                 command.Parameters.Clear();
@@ -124,13 +127,13 @@ public class DatabaseMigrations
                 var parameters = new Dictionary<string, object>
                 {
                     { "@file", fileName},
-                    { "@date", now }
+                    { "@timestamp", frozenTime }
                 };
 
                 command.AddParameters(parameters);
                 await command.ExecuteNonQueryAsync();
 
-                entryList.Add(new LogEntry(LogType.Info, $"Migration file `{fileName}` applied successfully."));
+                entryList.Add(LogEntry.Create(LogTypes.Info, $"Migration file `{fileName}` applied successfully."));
             }
 
             await transaction.CommitAsync();

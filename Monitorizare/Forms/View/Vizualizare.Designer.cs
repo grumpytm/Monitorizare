@@ -276,6 +276,7 @@ namespace Monitorizare
             DataGridView.AllowUserToDeleteRows = false;
             DataGridView.AllowUserToResizeColumns = false;
             DataGridView.AllowUserToResizeRows = false;
+            DataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             DataGridView.ColumnHeadersHeight = 30;
             DataGridView.GridStyles.Style = DataGridViewStyle.Mixed;
             DataGridView.GridStyles.StyleColumn = GridStyle.Sheet;
@@ -305,7 +306,6 @@ namespace Monitorizare
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            BorderStyle = MetroFramework.Drawing.MetroBorderStyle.FixedSingle;
             ClientSize = new Size(520, 640);
             Controls.Add(DataGridView);
             Controls.Add(FiltrareGroupBox);
